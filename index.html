@@ -101,6 +101,80 @@
     color: var(--ink);
   }
 
+  #made-by {
+    position: fixed; bottom: 14px; right: 20px; z-index: 500;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink3); font-family: var(--mono);
+    pointer-events: auto;
+  }
+  #made-by a {
+    color: inherit; text-decoration: underline; text-underline-offset: 3px;
+    transition: color 0.15s; cursor: pointer;
+  }
+  #made-by a:hover { color: var(--ink); }
+
+  /* ── Splash screen ── */
+  #splash {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease;
+    padding: 24px;
+  }
+  #splash.hidden { opacity: 0; pointer-events: none; }
+  #splash-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    box-shadow: 6px 6px 0 rgba(128,120,100,0.12);
+    padding: 40px 44px;
+    max-width: 520px;
+    width: 100%;
+  }
+  #splash-eon {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink3); font-family: var(--mono); margin-bottom: 12px;
+  }
+  #splash-title {
+    font-family: var(--serif); font-size: clamp(28px, 5vw, 42px);
+    font-weight: 400; letter-spacing: -0.02em; line-height: 1.1;
+    color: var(--ink); margin-bottom: 18px;
+  }
+  #splash-title em { font-style: italic; color: var(--ink2); }
+  #splash-desc {
+    font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    color: var(--ink2); margin-bottom: 28px;
+  }
+  #splash-steps {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 32px;
+    border-top: 1px solid rgba(128,120,100,0.15);
+    padding-top: 24px;
+  }
+  .splash-step {
+    display: flex; align-items: flex-start; gap: 14px;
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.04em; color: var(--ink3); line-height: 1.5;
+  }
+  .splash-step-icon {
+    flex-shrink: 0; width: 22px; text-align: center;
+    color: var(--ink); font-size: 13px; margin-top: 1px;
+  }
+  #splash-btn {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; cursor: pointer;
+    background: var(--ink); color: var(--bg);
+    border: none; padding: 12px 28px;
+    transition: opacity 0.15s;
+    width: 100%;
+  }
+  #splash-btn:hover { opacity: 0.85; }
+
+  @media (max-width: 600px) {
+    #splash-card { padding: 28px 24px; }
+    #splash-title { font-size: 28px; }
+    .splash-step { font-size: 10px; }
+  }
+
   .stage { flex: 1; overflow: hidden; position: relative; }
   .scroll-viewport { width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; cursor: grab; }
   .scroll-viewport:active { cursor: grabbing; }
@@ -477,10 +551,41 @@
 <div id="scale-pill"></div>
 <div id="img-overlay"></div>
 <div id="img-tooltip"><img id="img-tooltip-img" src="" alt=""><div class="img-caption"><b id="img-tooltip-desc"></b><span id="img-tooltip-credit"></span></div></div>
+<div id="made-by">Made by <a href="https://adarshya.webflow.io/" target="_blank" rel="noopener">Adarshya</a></div>
+
+<div id="splash">
+  <div id="splash-card">
+    <div id="splash-eon">4,570 Million Years</div>
+    <h2 id="splash-title">Life <em>Through</em> Time</h2>
+    <p id="splash-desc">An interactive journey through Earth's geological history — from the planet's fiery formation to the rise of complex life and the age of humans.</p>
+    <div id="splash-steps">
+      <div class="splash-step">
+        <span class="splash-step-icon">←→</span>
+        <span>Scroll the timeline to explore geological eras</span>
+      </div>
+      <div class="splash-step">
+        <span class="splash-step-icon">⊕</span>
+        <span>Click any card to zoom into periods and epochs</span>
+      </div>
+      <div class="splash-step">
+        <span class="splash-step-icon">◎</span>
+        <span>Hover cards to see fossils and reconstructions</span>
+      </div>
+    </div>
+    <button id="splash-btn" onclick="dismissSplash()">Begin Exploring</button>
+  </div>
+</div>
 
 <script>
 const LEFT_PAD   = 80;
 const LEFT_PAD_ZOOMED = () => IS_MOBILE() ? 120 : 160;
+
+// ── SPLASH ───────────────────────────────────────────────────────
+function dismissSplash() {
+  const splash = document.getElementById('splash');
+  splash.classList.add('hidden');
+  setTimeout(() => { splash.style.display = 'none'; }, 500);
+}
 const RIGHT_PAD  = 120;
 const TOTAL_MYA  = 4570;
 const BASE_SCALE = 1; // 1px per mya
@@ -1073,8 +1178,9 @@ function buildEraEls(era, idx) {
   // In that case, auto-alternate to keep a consistent zig-zag layout.
   const above = (typeof era.above === 'boolean') ? era.above : (idx % 2 === 0);
   const STEM_H = 55, CARD_H = 118;
-  const cardLeft = overviewX((era.start + era.end) / 2) - 95;
-  const anchorX  = cardLeft + 95;
+  const halfW   = CARD_W() / 2;
+  const cardLeft = overviewX((era.start + era.end) / 2) - halfW;
+  const anchorX  = cardLeft + halfW;
   const hasPeriods = Array.isArray(era.periods) && era.periods.length > 0;
 
   const bar = document.createElement('div');
@@ -1100,7 +1206,8 @@ function buildEraEls(era, idx) {
   const stem = document.createElement('div');
   stem.className = 'stem';
   const NODE_HALF = 10;
-  stem.style.cssText = `left:${anchorX}px; top:${above ? lineY - STEM_H : lineY + NODE_HALF}px; height:${STEM_H - NODE_HALF}px; opacity:0;`;
+  const mobileGap = IS_MOBILE() ? 30 : 0;
+  stem.style.cssText = `left:${anchorX}px; top:${above ? lineY - STEM_H - mobileGap : lineY + NODE_HALF}px; height:${STEM_H - NODE_HALF + mobileGap}px; opacity:0;`;
   canvas.appendChild(stem);
 
   const card = document.createElement('div');
@@ -1241,8 +1348,9 @@ function spawnPeriods(era, xFn) {
     canvas.appendChild(pnode); periodEls.push(pnode);
     requestAnimationFrame(() => pnode.classList.add('visible'));
 
-    const stemTop    = above ? lineY - STEM_H : lineY + NODE_HALF;
-    const stemHeight = STEM_H - NODE_HALF;
+    const mobileGap2 = IS_MOBILE() ? 30 : 0;
+    const stemTop    = above ? lineY - STEM_H - mobileGap2 : lineY + NODE_HALF;
+    const stemHeight = STEM_H - NODE_HALF + mobileGap2;
     const pstem = document.createElement('div');
     pstem.className = 'period-stem';
     pstem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${stemHeight}px; opacity:0;`;
@@ -1423,7 +1531,8 @@ function zoomPeriod(era, clickedPeriod, cx, cy) {
       allEpochs.forEach((epoch, ei) => {
         const above   = alts[ei % alts.length];
         const midX    = epochXFn((epoch.start + epoch.end) / 2);
-        const stemTop = above ? lineY - STEM_H : lineY + NODE_HALF;
+        const mobileGap3 = IS_MOBILE() ? 30 : 0;
+        const stemTop = above ? lineY - STEM_H - mobileGap3 : lineY + NODE_HALF;
         const cardTop = above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H;
 
         const enode = document.createElement('div');
@@ -1433,7 +1542,7 @@ function zoomPeriod(era, clickedPeriod, cx, cy) {
 
         const estem = document.createElement('div');
         estem.className = 'epoch-stem';
-        estem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
+        estem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF+mobileGap3}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
         canvas.appendChild(estem); epochEls.push(estem);
 
         const ecard = document.createElement('div');
@@ -1611,7 +1720,8 @@ function zoomOutEpochs(cx, cy) {
         const above   = alts[pi % alts.length];
         const midX    = periodXFn((period.start + period.end) / 2);
         const color   = getPeriodColor(era, pi);
-        const stemTop = above ? lineY - STEM_H : lineY + NODE_HALF;
+        const mobileGap4 = IS_MOBILE() ? 30 : 0;
+        const stemTop = above ? lineY - STEM_H - mobileGap4 : lineY + NODE_HALF;
         const cardTop = above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H;
 
         const pnode = document.createElement('div');
@@ -1621,7 +1731,7 @@ function zoomOutEpochs(cx, cy) {
 
         const pstem = document.createElement('div');
         pstem.className = 'period-stem';
-        pstem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
+        pstem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF+mobileGap4}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
         canvas.appendChild(pstem); periodEls.push(pstem);
 
         const hasEpochs = period.epochs && period.epochs.length > 0;
@@ -1933,6 +2043,11 @@ function springStep(pos, vel, target, stiffness, damping, dt) {
 }
 
 function makeDraggableCard(card, stemEl, nodeEl) {
+  // On mobile: show DOM stem directly, skip SVG drag machinery entirely
+  if (IS_MOBILE()) {
+    if (stemEl) { stemEl.style.opacity = '1'; }
+    return;
+  }
   // Hide the static stem permanently — the SVG line takes over from here
   if (stemEl) { stemEl.style.opacity = '0'; stemEl.style.pointerEvents = 'none'; }
 
