@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Through Time</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  :root {
+    --bg: #f5f0e8;
+    --ink: #1a1710;
+    --ink2: #4a4535;
+    --ink3: #8a8270;
+    --card-bg: #ffffff;
+    --border: #1a1710;
+    --serif: 'Playfair Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+  }
+  .dark {
+    --bg: #161410;
+    --ink: #e8e0d0;
+    --ink2: #b8ad98;
+    --ink3: #6a6255;
+    --card-bg: #201e19;
+    --border: #4a4540;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--mono); overflow: hidden; transition: background 0.3s, color 0.3s; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(128,120,100,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(128,120,100,0.06) 1px, transparent 1px);
+    background-size: 32px 32px; pointer-events: none; z-index: 0;
+  }
+  .page { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Dark mode toggle ── */
+  #theme-toggle {
+    margin-left: 0px;
+    width: 36px; height: 20px;
+    background: var(--ink3);
+    border-radius: 10px;
+    border: none; cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.25s;
+  }
+  #theme-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--bg);
+    transition: transform 0.25s, background 0.25s;
+  }
+  .dark #theme-toggle::after {
+    transform: translateX(16px);
+  }
+  #theme-toggle-label {
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink3); cursor: pointer; flex-shrink: 0; margin-left: auto;
+  }
+
+  header {
+    padding: 26px 60px 16px;
+    border-bottom: 1px solid rgba(128,120,100,0.15);
+    flex-shrink: 0; display: flex; align-items: center; gap: 20px;
+  }
+  header h1 { font-family: var(--serif); font-size: clamp(20px,3vw,34px); font-weight: 400; letter-spacing: -0.02em; line-height: 1; }
+  header h1 em { font-style: italic; color: var(--ink2); }
+  #breadcrumb { font-size: 13px; letter-spacing: 0.08em; color: var(--ink3); text-transform: uppercase; opacity: 0; transition: opacity 0.4s; }
+  #breadcrumb .era-name { font-weight: 500; }
+  .crumb {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
+  .crumb:hover { color: var(--ink); }
+  .crumb.active {
+    cursor: default;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .stage { flex: 1; overflow: hidden; position: relative; }
+  .scroll-viewport { width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; cursor: grab; }
+  .scroll-viewport:active { cursor: grabbing; }
+  .canvas { position: relative; height: 100%; }
+
+  /* ── Zoom animation overlay ── */
+  #zoom-overlay {
+    position: absolute; inset: 0; z-index: 500;
+    pointer-events: none; overflow: hidden;
+  }
+  #zoom-circle {
+    position: absolute; border-radius: 50%;
+    background: var(--bg);
+    pointer-events: none;
+    opacity: 0;
+  }
+  #zoom-circle.zoom-active {
+    opacity: 1;
+  }
+
+  /* ── Base timeline elements ── */
+  .tl-base { transition: opacity 0.5s; }
+  .tl-base.faded { opacity: 0.01; pointer-events: none; }
+
+  .timeline-line { position: absolute; left: 0; width: 100%; height: 2px; background: var(--border); z-index: 30; }
+  .now-line { position: absolute; width: 2px; background: #c04030; z-index: 30; }
+  .now-label { position: absolute; font-size: 11px; letter-spacing: 0.1em; color: #c04030; text-transform: uppercase; font-weight: 500; z-index: 0; }
+  .tick { position: absolute; width: 1px; background: rgba(128,120,100,0.3); transform: translateX(-50%); }
+  .tick-label { position: absolute; font-size: 10px; color: var(--ink3); transform: translateX(-50%); letter-spacing: 0.04em; white-space: nowrap; font-family: var(--mono); z-index: 40; }
+
+  /* ── Era bar ── */
+  .era-bar {
+    position: absolute; height: 10px; cursor: pointer;
+    transition: opacity 0.5s, left 0.6s cubic-bezier(0.4,0,0.2,1), width 0.6s cubic-bezier(0.4,0,0.2,1), height 0.3s;
+  }
+  .era-bar:not(.active-bar):hover { opacity: 0.85; height: 14px; }
+  .era-bar.faded { opacity: 0.05 !important; pointer-events: none; }
+  .era-bar.active-bar { cursor: default; opacity: 0.6; }
+
+  /* ── Era node / stem / card ── */
+  .era-node {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    border: 2.5px solid var(--border); transform: translate(-50%, -50%);
+    cursor: pointer; z-index: 200;
+    transition: transform 0.15s, left 0.6s cubic-bezier(0.4,0,0.2,1), opacity 0.45s;
+  }
+  .era-node:hover { transform: translate(-50%, -50%) scale(1.3); }
+  .era-node.faded { opacity: 0.02; pointer-events: none; }
+
+  .stem {
+    position: absolute; width: 1.5px; background: var(--border); transform: translateX(-50%);
+    transition: left 0.6s cubic-bezier(0.4,0,0.2,1), opacity 0.45s;
+    pointer-events: none;
+  }
+  .stem.faded { opacity: 0.02; }
+
+  /* SVG stems used during drag / spring return */
+  .stem-svg {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; overflow: visible; z-index: 15;
+  }
+
+  .era-card {
+    position: absolute; background: var(--card-bg); border: 1.5px solid var(--border);
+    padding: 13px 15px; cursor: pointer; width: 190px;
+    box-shadow: 3px 3px 0 rgba(128,120,100,0.12);
+    transition: box-shadow 0.2s, transform 0.2s, opacity 0.45s, left 0.6s cubic-bezier(0.4,0,0.2,1);
+    z-index: 120;
+  }
+  .era-card:hover { box-shadow: 5px 5px 0 rgba(128,120,100,0.2); transform: translateY(-2px); z-index: 20; }
+  .era-card--muted { background: var(--bg); }
+  .dark .era-card--muted { background: var(--bg); }
+  .era-card--muted:hover { box-shadow: 3px 3px 0 rgba(128,120,100,0.12); transform: none; z-index: 120; }
+  .era-card.faded { opacity: 0.05; pointer-events: none; }
+  .era-card-name { display: inline-block; padding: 2px 8px; margin-bottom: 6px; font-family: var(--serif); font-size: 15px; font-style: italic; color: #1a1710; }
+  .era-card-dates { font-size: 10px; letter-spacing: 0.08em; color: var(--ink3); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; font-weight: bold; }
+  .era-card-desc { font-size: 12px; line-height: 1.6; color: var(--ink2); }
+  .era-card-eon { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+  .era-card-hint { font-size: 11px; color: var(--ink3); margin-top: 8px; letter-spacing: 0.05em; border-top: 1px solid rgba(26,23,16,0.08); padding-top: 6px; }
+
+  /* ── Scale pill shown during zoom ── */
+  #scale-pill {
+    position: fixed; bottom: 92px; left: 60px; z-index: 200;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--ink); color: var(--bg);
+    padding: 5px 12px; border-radius: 20px;
+    opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  }
+  #scale-pill.visible { opacity: 1; }
+
+  /* ── Period elements (spawned on zoom) ── */
+  .period-node {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    border: 2.5px solid var(--border); transform: translate(-50%, -50%); z-index: 200;
+    opacity: 0; transition: opacity 0.45s, transform 0.15s; pointer-events: none;
+    cursor: pointer;
+  }
+  .period-node.visible { opacity: 1; pointer-events: auto; }
+  .period-node:hover { transform: translate(-50%, -50%) scale(1.3); }
+
+  .period-stem {
+    position: absolute; width: 1px; background: var(--border); transform: translateX(-50%);
+    opacity: 0; transition: opacity 0.45s;
+  }
+  .period-stem.visible { opacity: 1; }
+
+  .period-card {
+    position: absolute; background: var(--card-bg); border: 1.5px solid var(--border);
+    padding: 13px 15px; width: 190px;
+    box-shadow: 3px 3px 0 rgba(128,120,100,0.12);
+    opacity: 0; transition: opacity 0.45s, box-shadow 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 120;
+  }
+  .period-card.visible { opacity: 1; pointer-events: auto; }
+  .period-card:hover { box-shadow: 5px 5px 0 rgba(128,120,100,0.2); transform: translateY(-2px); z-index: 20; }
+  .period-card--muted { background: var(--bg); }
+  .dark .period-card--muted { background: var(--bg); }
+  .period-card--muted:hover { box-shadow: 3px 3px 0 rgba(128,120,100,0.12); transform: none; z-index: 120; }
+  .period-card-name { display: inline-block; padding: 2px 8px; margin-bottom: 6px; font-family: var(--serif); font-size: 15px; font-style: italic; color: #1a1710; }
+  .period-card-era { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+  .period-card-dates { font-size: 10px; letter-spacing: 0.08em; color: var(--ink3); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; font-weight: bold; }
+  .period-card-desc { font-size: 12px; line-height: 1.6; color: var(--ink2); }
+
+  .period-tick { position: absolute; width: 1px; background: rgba(26,23,16,0.25); transform: translateX(-50%); opacity: 0; transition: opacity 0.45s; z-index: 40; }
+  .period-tick.visible { opacity: 1; }
+  .period-tick-label { position: absolute; font-size: 10px; color: var(--ink3); transform: translateX(-50%); letter-spacing: 0.04em; white-space: nowrap; font-family: var(--mono); opacity: 0; transition: opacity 0.45s; z-index: 40; }
+  .period-tick-label.visible { opacity: 1; }
+
+  /* ── Epoch elements ── */
+  .epoch-node {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    border: 2.5px solid var(--border); transform: translate(-50%, -50%); z-index: 200;
+    opacity: 0; transition: opacity 0.45s, transform 0.15s; pointer-events: none;
+    cursor: pointer;
+  }
+  .epoch-node.visible { opacity: 1; pointer-events: auto; }
+  .epoch-node:hover { transform: translate(-50%, -50%) scale(1.3); }
+
+  .epoch-stem {
+    position: absolute; width: 1px; background: var(--border); transform: translateX(-50%);
+    opacity: 0; transition: opacity 0.45s;
+  }
+  .epoch-stem.visible { opacity: 1; }
+
+  .epoch-card {
+    position: absolute; background: var(--card-bg); border: 1.5px solid var(--border);
+    padding: 13px 15px; width: 190px;
+    box-shadow: 3px 3px 0 rgba(128,120,100,0.12);
+    opacity: 0; transition: opacity 0.45s, box-shadow 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 120;
+  }
+  .epoch-card.visible { opacity: 1; pointer-events: auto; }
+  .epoch-card:hover { box-shadow: 5px 5px 0 rgba(128,120,100,0.2); transform: translateY(-2px); z-index: 20; }
+  .epoch-card--muted { background: var(--bg); }
+  .dark .epoch-card--muted { background: var(--bg); }
+  .epoch-card--muted:hover { box-shadow: 3px 3px 0 rgba(128,120,100,0.12); transform: none; z-index: 120; }
+  .epoch-card-name  { display: inline-block; padding: 2px 8px; margin-bottom: 6px; font-family: var(--serif); font-size: 15px; font-style: italic; color: #1a1710; }
+  .epoch-card-dates { font-size: 10px; letter-spacing: 0.08em; color: var(--ink3); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; font-weight: bold; }
+  .epoch-card-desc  { font-size: 12px; line-height: 1.6; color: var(--ink2); }
+  .epoch-card-period {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .epoch-card-period .swatch {
+    width: 14px; height: 7px;
+    border: 1px solid rgba(26,23,16,0.25);
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .epoch-tick { position: absolute; width: 1px; background: rgba(26,23,16,0.2); transform: translateX(-50%); opacity: 0; transition: opacity 0.45s; z-index: 40; }
+  .epoch-tick.visible { opacity: 1; }
+  .epoch-tick-label { position: absolute; font-size: 10px; color: var(--ink3); transform: translateX(-50%); letter-spacing: 0.04em; white-space: nowrap; font-family: var(--mono); opacity: 0; transition: opacity 0.45s; z-index: 40; }
+  .epoch-tick-label.visible { opacity: 1; }
+
+  /* ── Period card hover tooltip ── */
+  .period-card-tooltip {
+    position: fixed; z-index: 400; pointer-events: none;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: #ffffff;
+    background: #000000; border: none;
+    padding: 5px 10px;
+    opacity: 0; transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .period-card-tooltip.visible { opacity: 1; }
+
+  /* ── Cursor back hint ── */
+  #back-hint {
+    position: fixed; z-index: 400; pointer-events: none;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink2);
+    background: var(--card-bg); border: 1px solid var(--border);
+    padding: 4px 9px;
+    opacity: 0; transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  #back-hint.visible { opacity: 1; }
+
+  /* ── Period image tooltip ── */
+  #img-tooltip {
+    position: fixed; z-index: 300; pointer-events: none;
+    opacity: 0; transition: opacity 0.25s;
+    background: var(--card-bg); border: 1.5px solid var(--border);
+    box-shadow: 4px 4px 0 rgba(128,120,100,0.15);
+    width: 240px;
+  }
+  #img-tooltip.visible { opacity: 1; }
+  #img-tooltip img {
+    width: 100%; height: 160px; object-fit: contain; display: block;
+  }
+  #img-tooltip .img-caption {
+    padding: 8px 10px;
+    font-size: 11px; color: var(--ink3); letter-spacing: 0.05em;
+    line-height: 1.5; border-top: 1px solid rgba(26,23,16,0.08);
+  }
+  #img-tooltip .img-caption b {
+    display: block; font-size: 13px; color: var(--ink);
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    margin-bottom: 2px;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex; gap: 20px; padding: 12px 60px;
+    border-top: 1px solid rgba(128,120,100,0.15);
+    font-size: 12px; color: var(--ink3); letter-spacing: 0.06em;
+    text-transform: uppercase; align-items: center; flex-shrink: 0;
+    transition: opacity 0.5s;
+  }
+  .legend.faded { opacity: 0; pointer-events: none; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 16px; height: 8px; border: 1px solid rgba(26,23,16,0.2); }
+
+  /* ── Card icons ── */
+  .card-icon {
+    width: 20px; height: 20px; flex-shrink: 0;
+    color: var(--ink3); opacity: 0.55;
+  }
+  .card-icon svg { width: 100%; height: 100%; }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 5px;
+  }
+  .period-card .card-header, .epoch-card .card-header { margin-bottom: 4px; }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 600px) {
+    html, body { overflow: hidden; }
+
+    header {
+      padding: 12px 16px 10px;
+      gap: 10px;
+    }
+    header h1 { font-size: 18px; }
+    #breadcrumb { font-size: 10px; letter-spacing: 0.05em; }
+    #theme-toggle-label { display: none; }
+
+    .legend {
+      padding: 8px 16px;
+      gap: 10px;
+      font-size: 10px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .era-card, .period-card, .epoch-card { width: 150px; padding: 9px 10px; }
+    .era-card-name, .period-card-name, .epoch-card-name { font-size: 13px; }
+    .era-card-desc, .period-card-desc, .epoch-card-desc { font-size: 11px; }
+    .era-card-dates, .period-card-dates, .epoch-card-dates { font-size: 9px; }
+
+    #scale-pill { bottom: 70px; left: 16px; font-size: 10px; }
+    #back-hint { display: none; }
+    .period-card-tooltip { display: none; }
+
+    /* img tooltip becomes a tap-triggered panel on mobile */
+    #img-tooltip { width: 180px; }
+    #img-tooltip img { height: 120px; }
+    #img-tooltip .img-caption { font-size: 10px; padding: 6px 8px; }
+    #img-tooltip .img-caption b { font-size: 11px; }
+
+    .scroll-viewport { -webkit-overflow-scrolling: touch; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Life <em>Through</em> Time</h1>
+    <div id="breadcrumb">
+      <span id="back-btn" class="crumb">← All Eras</span>
+      &nbsp;/&nbsp;
+      <span class="era-name crumb" id="breadcrumb-era"></span>
+      <span id="breadcrumb-period-sep" style="display:none">&nbsp;/&nbsp;<span class="era-name crumb" id="breadcrumb-period"></span></span>
+    </div>
+    <span id="theme-toggle-label" onclick="toggleTheme()">Dark</span>
+    <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+  </header>
+
+  <div class="stage">
+    <div class="scroll-viewport" id="viewport">
+      <div class="canvas" id="canvas"></div>
+    </div>
+    <div id="zoom-overlay"><div id="zoom-circle"></div></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+<div id="back-hint"></div>
+<div id="period-card-tooltip" class="period-card-tooltip">View all Epochs in this Period</div>
+<div id="era-card-tooltip" class="period-card-tooltip">View all Periods in this Era</div>
+<div id="scale-pill"></div>
+<div id="img-tooltip"><img id="img-tooltip-img" src="" alt=""><div class="img-caption"><b id="img-tooltip-desc"></b><span id="img-tooltip-credit"></span></div></div>
+
+<script>
+const LEFT_PAD   = 80;
+const LEFT_PAD_ZOOMED = 160;
+const RIGHT_PAD  = 120;
+const TOTAL_MYA  = 4570;
+const BASE_SCALE = 1; // 1px per mya
+
+const IS_MOBILE = () => window.innerWidth <= 600;
+const PERIOD_CARD_W = 190;
+const EPOCH_CARD_W  = 190;
+const CARD_W = () => IS_MOBILE() ? 150 : 190;
+const CARD_GAP_PX = 14;
+const ALTS = [true, false, true, false, true, false];
+const DEFAULT_GREY = '#b9b9b9';
+const DEFAULT_GREY_LIGHT = '#e1e1e1';
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '').trim();
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r, g, b) {
+  const to2 = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+  return '#' + to2(r) + to2(g) + to2(b);
+}
+
+function mixHex(a, b, t) {
+  const A = hexToRgb(a), B = hexToRgb(b);
+  return rgbToHex(
+    A.r + (B.r - A.r) * t,
+    A.g + (B.g - A.g) * t,
+    A.b + (B.b - A.b) * t
+  );
+}
+
+function darkenHex(hex, amount) { return mixHex(hex, '#000000', amount); }
+
+function getPeriodColor(era, periodIndex) {
+  const count = era.periods.length;
+  if (count <= 1) return era.colorLight;
+
+  const t = periodIndex / (count - 1); // 0..1
+  const light = era.colorLight;
+  const base = era.color;
+  const dark = darkenHex(era.color, 0.28);
+
+  // 3-stop gradient: light -> base -> dark
+  if (t <= 0.5) return mixHex(light, base, t / 0.5);
+  return mixHex(base, dark, (t - 0.5) / 0.5);
+}
+
+function getPeriodCardBg(color) {
+  // Tint towards white so the card title stays readable.
+  return mixHex(color, '#ffffff', 0.82);
+}
+
+function computeRequiredScaleForCards(entities, cardWidthPx, gapPx, alts, midFn) {
+  let required = 0;
+
+  const bySide = [[], []]; // [above, below]
+  entities.forEach((ent, idx) => {
+    const above = !!alts[idx % alts.length];
+    const mid = midFn(ent);
+    if (above) bySide[0].push(mid);
+    else bySide[1].push(mid);
+  });
+
+  for (const mids of bySide) {
+    for (let i = 1; i < mids.length; i++) {
+      const d = mids[i] - mids[i - 1];
+      if (d > 0) required = Math.max(required, (cardWidthPx + gapPx) / d);
+    }
+  }
+
+  return required; // 0 means "no constraint"
+}
+
+function getAllEpochsWithPeriod(era) {
+  const out = [];
+  era.periods.forEach((period, pi) => {
+    const periodColor = getPeriodColor(era, pi);
+    (period.epochs || []).forEach(epoch => {
+      out.push({
+        ...epoch,
+        periodName: period.name,
+        periodColor
+      });
+    });
+  });
+  return out.sort((a, b) => a.start - b.start);
+}
+
+function getEraPeriodZoomScale(era, viewW) {
+  const eraDur = era.end - era.start;
+  const baseZoomScale = (viewW * 0.72) / eraDur;
+  const required = computeRequiredScaleForCards(
+    era.periods,
+    CARD_W(),
+    CARD_GAP_PX,
+    ALTS,
+    p => (p.start + p.end) / 2
+  );
+  return Math.max(baseZoomScale, required);
+}
+
+function getEpochZoomScale(era, viewW) {
+  const eraDur = era.end - era.start;
+  const baseZoomScale = (viewW * 0.72) / eraDur;
+  const allEpochs = getAllEpochsWithPeriod(era);
+  const required = computeRequiredScaleForCards(
+    allEpochs,
+    CARD_W(),
+    CARD_GAP_PX,
+    ALTS,
+    e => (e.start + e.end) / 2
+  );
+  return Math.max(baseZoomScale, required);
+}
+
+const zoomCircle = document.getElementById('zoom-circle');
+let zoomLocked = false;
+
+function runZoomTransition(cx, cy, callback) {
+  if (zoomLocked) return;
+  zoomLocked = true;
+
+  hideImgTooltip();
+  document.getElementById('back-hint').classList.remove('visible');
+
+  const stageRect = document.querySelector('.stage').getBoundingClientRect();
+  const lx = cx - stageRect.left;
+  const ly = cy - stageRect.top;
+  const size = Math.ceil(Math.hypot(stageRect.width, stageRect.height) * 2.4);
+
+  // Position circle centred on click point within the stage
+  zoomCircle.style.cssText = `
+    width:${size}px; height:${size}px;
+    left:${lx - size/2}px; top:${ly - size/2}px;
+    opacity:0; transition:opacity 0.22s ease;
+  `;
+
+  // Force reflow so transition picks up from opacity:0
+  void zoomCircle.offsetWidth;
+
+  // Fade in to cover screen
+  zoomCircle.style.opacity = '1';
+
+  // Once covered, swap content, then fade out to reveal new content
+  setTimeout(() => {
+    callback();
+
+    // Brief pause so new content is painted before we reveal it
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      zoomCircle.style.transition = 'opacity 0.28s ease';
+      zoomCircle.style.opacity = '0';
+      setTimeout(() => {
+        zoomCircle.style.cssText = '';
+        zoomLocked = false;
+      }, 300);
+    }));
+  }, 240);
+}
+
+function animateZoomIn(cx, cy, cb)  { runZoomTransition(cx, cy, cb); }
+function animateZoomOut(cx, cy, cb) { runZoomTransition(cx, cy, cb); }
+
+
+function setBreadcrumb(mode, eraLabel) {
+  if (mode === 'overview') {
+    breadcrumb.style.opacity = '0';
+    breadcrumbEra.textContent = '';
+    breadcrumbPeriodSep.style.display = 'none';
+
+    backBtn.classList.add('active');
+    breadcrumbEra.classList.remove('active');
+    breadcrumbPeriod.classList.remove('active');
+    return;
+  }
+
+  breadcrumb.style.opacity = '1';
+  breadcrumbEra.textContent = eraLabel ? eraLabel + ' Era' : '';
+  backBtn.classList.remove('active');
+
+  if (mode === 'era') {
+    breadcrumbEra.classList.add('active');
+    breadcrumbPeriodSep.style.display = 'none';
+    breadcrumbPeriod.textContent = '';
+    breadcrumbPeriod.classList.remove('active');
+  } else {
+    // epochs
+    breadcrumbEra.classList.remove('active');
+    breadcrumbPeriod.textContent = 'Periods / Epochs';
+    breadcrumbPeriodSep.style.display = 'inline';
+    breadcrumbPeriod.classList.add('active');
+  }
+}
+
+const eras = [
+  {
+    id: 'cenozoic', label: 'Cenozoic', start: 0, end: 66, eon: 'Phanerozoic',
+    color: '#e8b96a', colorLight: '#f7e4bb', above: false,
+    desc: 'Rise of mammals and flowering plants.',
+    periods: [
+      { name: 'Quaternary', start: 0, end: 2.6, desc: 'Repeated ice ages occur. Humans evolve; modern ecosystems and climate develop.',
+        epochs: [
+          { name: 'Holocene',    start: 0,     end: 0.012, desc: 'Age of humans — civilisation, agriculture and rapid climate change.',
+            imgDesc: 'Çatalhöyük — Neolithic farming settlement' },
+          { name: 'Pleistocene', start: 0.012, end: 2.6,   desc: 'Ice ages; megafauna extinction and early humans.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ice_age_fauna_of_northern_Spain_-_Mauricio_Ant%C3%B3n.jpg&width=320',
+            imgCredit: 'Mauricio Antón — CC BY 2.5',
+            imgDesc: 'Woolly mammoths, rhinos, horses, and cave lions roamed.' },
+        ]
+      },
+      { name: 'Neogene', start: 2.6, end: 23, desc: 'Mammals diversify on land and sea.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Megatherium_Knight.jpg&width=320',
+        imgCredit: 'Charles R. Knight, 1921 — Public domain',
+            imgDesc: 'Megatherium — giant ground sloth',
+        epochs: [
+          { name: 'Pliocene', start: 2.6,  end: 5.3,  desc: 'Early human ancestors evolved; bipedalism and stone tools emerged.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Australopithecus_anamensis_skull.png&width=320',
+            imgCredit: 'Wikimedia Commons — Public domain',
+            imgDesc: 'Australopithecus anamensis — earliest known hominin' },
+          { name: 'Miocene',  start: 5.3,  end: 23,   desc: 'Apes evolved and diversified; human–chimp lineage split in the late epoch.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Proconsul_africanus.jpg&width=320',
+            imgCredit: 'Mauricio Antón — CC BY 2.5',
+            imgDesc: 'Apes evolved and diversified, with the human–chimp lineage splitting late.' },
+        ]
+      },
+      { name: 'Paleogene', start: 23, end: 66, desc: 'Primitive mammals and birds flourish.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Andrewsarchus_knight.jpg&width=320',
+        imgCredit: 'Charles R. Knight, 1923 — Public domain',
+            imgDesc: 'Andrewsarchus — largest land predator',
+        epochs: [
+          { name: 'Oligocene', start: 23, end: 33.9, desc: 'Earth cools sharply; grasslands spread as modern mammals establish.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dinictis_and_Protoceras.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Dogs, nimravids, bears, weasels, and raccoons replaced the creodonts.' },
+          { name: 'Eocene',    start: 33.9, end: 56,  desc: 'Warm greenhouse Earth; modern mammals rapidly diversify.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Eohippus.jpg&width=320',
+            imgCredit: 'Wikimedia Commons — Public domain',
+            imgDesc: 'Hoofed animals diversified in a major radiation between Europe and North America.' },
+          { name: 'Paleocene', start: 56,   end: 66,  desc: 'Mammals quickly diversified, filling roles left by extinct dinosaurs.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Purgatorius_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Purgatorius — earliest known primate' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'mesozoic', label: 'Mesozoic', start: 66, end: 251, eon: 'Phanerozoic',
+    color: '#a89fd8', colorLight: '#ddd8f4', above: true,
+    desc: 'Age of dinosaurs. First birds appear.',
+    periods: [
+      { name: 'Cretaceous', start: 66, end: 146, desc: 'First flowering plants; dinosaurs go extinct.',
+        epochs: [
+          { name: 'Late Cretaceous',  start: 66,  end: 100.5, desc: 'Dinosaurs reach their peak; K–Pg extinction event.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Impact_event.jpg&width=320',
+            imgCredit: 'Don Davis / NASA — Public domain',
+            imgDesc: 'K–Pg extinction wiped out ~75–80% of species, including all non-avian dinosaurs.' },
+          { name: 'Early Cretaceous', start: 100.5, end: 146,  desc: 'First flowering plants; ceratopsians, spinosaurids and coelurosaurs emerge.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Spinosaurus_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Spinosaurids (shown here), Ceratopsians, Carcharodontosaurids and Coelurosaurs emerged.' },
+        ]
+      },
+      { name: 'Jurassic', start: 146, end: 200, desc: 'Dinosaurs dominant; first bird fossils.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Brontosaurus_Excelsus.jpg&width=320',
+        imgCredit: 'Charles R. Knight, 1897 — Public domain',
+            imgDesc: 'Brontosaurus — long-necked sauropod',
+        epochs: [
+          { name: 'Late Jurassic',   start: 146, end: 163.5, desc: 'Famous dinosaur groups thrived; the first birds appeared.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Carnotaurus_Reconstruction_(2022).png&width=320',
+            imgCredit: 'H. Raab — CC BY-SA 3.0',
+            imgDesc: 'Theropods (shown here), Sauropods and Thyreophorans emerged.' },
+          { name: 'Middle Jurassic', start: 163.5, end: 174.7, desc: 'Pangaea begins to split; mammals rapidly diversify.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Brachiosaurus_DB.jpg&width=320',
+            imgCredit: 'Dmitry Bogdanov — CC BY 3.0',
+            imgDesc: 'Brachiosaurs (shown here), Cetiosaurs, Megalosaurs and primitive Ornithopods emerged.' },
+          { name: 'Early Jurassic',  start: 174.7, end: 200,   desc: 'Dinosaurs diversify; marine reptiles and early mammals flourish.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ichthyosaurus_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Ammonites explosively diversified after near-extinction.' },
+        ]
+      },
+      { name: 'Triassic', start: 200, end: 251, desc: 'First mammals and dinosaurs emerge.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Plateosaurus_engelhardti.jpg&width=320',
+        imgCredit: 'Heinrich Harder, 1916 — Public domain',
+            imgDesc: 'Plateosaurus — early large herbivore',
+        epochs: [
+          { name: 'Late Triassic',   start: 200, end: 228,   desc: 'First dinosaurs emerge; Triassic–Jurassic extinction event.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Herrerasaurus_ischigualastensis_Illustration.jpg&width=320',
+            imgCredit: 'Smokeybjb — CC BY-SA 3.0',
+            imgDesc: 'Herrerasaurus (shown here), Plateosaurus, Coelophysis, and Eoraptor emerged.' },
+          { name: 'Middle Triassic', start: 228, end: 241.5, desc: 'Marine reptiles diversify; Pangaea begins drifting.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Contectopalatus1DB.jpg&width=320',
+            imgCredit: 'Dmitry Bogdanov — CC BY 3.0',
+            imgDesc: 'Mixosaurus panxianensis — early ichthyosaur.' },
+          { name: 'Early Triassic',  start: 241.5, end: 251,  desc: 'Extinction recovery; first archosaurs, crocodile and dinosaur ancestors emerge.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Erythrosuchus_africanus.jpg&width=320',
+            imgCredit: 'Dmitry Bogdanov — CC BY 3.0',
+            imgDesc: 'Erythrosuchus — one of the first archosauriforms.' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'paleozoic', label: 'Paleozoic', start: 251, end: 542, eon: 'Phanerozoic',
+    color: '#7bc4a8', colorLight: '#c8edd9', above: false,
+    desc: 'Explosion of complex life. Sea to land.',
+    periods: [
+      { name: 'Permian', start: 251, end: 299, desc: 'Reptiles thrive; greatest mass extinction.',
+        epochs: [
+          { name: 'Lopingian',    start: 251, end: 259.5, desc: 'End-Permian extinction; ~96% of species lost.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Gorgonops_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Gorgonops — top predator before extinction' },
+          { name: 'Guadalupian',  start: 259.5, end: 272.3, desc: 'Therapsids dominate; two extinction events devastate life.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Titanophoneus_chart2_DB15.jpg&width=320',
+            imgCredit: 'Dmitry Bogdanov — CC BY 3.0',
+            imgDesc: 'Titanophoneus — top predator of the Guadalupian.' },
+          { name: 'Cisuralian',   start: 272.3, end: 299,   desc: 'Synapsids rule the land; beetles and flies appear.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dimetrodon_gigashomog_DB.jpg&width=320',
+            imgCredit: 'Dmitry Bogdanov — CC BY 3.0',
+            imgDesc: 'Dimetrodon — a pelycosaur, early reptile-like synapsid.' },
+        ]
+      },
+      { name: 'Carboniferous', start: 299, end: 359, desc: 'Coal swamp forests; giant insects.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Coal_forest_USA.jpg&width=320',
+        imgCredit: 'Mary Evans Picture Library — Public domain',
+            imgDesc: 'Carboniferous coal swamp forest',
+        epochs: [
+          { name: 'Pennsylvanian', start: 299, end: 323.2, desc: 'Amniote egg evolves — tetrapods reproduce on land for the first time.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Chicken_egg_diagram.svg&width=320',
+            imgCredit: 'Wikimedia Commons — Public domain',
+            imgDesc: 'Anatomy of an amniotic egg — key innovation for land reproduction.' },
+          { name: 'Mississippian', start: 323.2, end: 359,   desc: 'Almost the entire Northern Hemisphere flooded by shallow seas.' },
+        ]
+      },
+      { name: 'Devonian', start: 359, end: 416, desc: 'Age of fishes; first amphibians.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Devonian_sea.jpg&width=320',
+        imgCredit: 'Heinrich Harder, 1920 — Public domain',
+            imgDesc: 'Devonian ocean — Age of Fishes',
+        epochs: [
+          { name: 'Late Devonian',   start: 359, end: 382.7, desc: 'Tetrapods emerge on land; mass extinctions devastate marine life.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Tiktaalik_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Tiktaalik — first fish to walk on land' },
+          { name: 'Middle Devonian', start: 382.7, end: 393.3, desc: 'First forests appear; jawed fish evolve lung-like adaptations.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dunkleosteus_BW.jpg&width=320',
+            imgCredit: 'Nobu Tamura — CC BY 3.0',
+            imgDesc: 'Dunkleosteus — armoured apex predator' },
+          { name: 'Early Devonian',  start: 393.3, end: 416,   desc: 'Land plants, arthropods, jawed fish and ammonoids appear.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Pleuroceras_solare,_Little_Switzerland,_Bavaria,_Germany.jpg&width=320',
+            imgCredit: 'Wikimedia Commons — CC BY-SA 3.0',
+            imgDesc: 'Pleuroceras solare — early Devonian ammonoid fossil.' },
+        ]
+      },
+      { name: 'Silurian', start: 416, end: 444, desc: 'Warm seas, reefs; first land plants.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Eurypterus_remipes.jpg&width=320',
+        imgCredit: 'Heinrich Harder, 1916 — Public domain',
+            imgDesc: 'Eurypterus — Silurian sea scorpion',
+        epochs: [
+          { name: 'Pridoli',   start: 416,   end: 419.2, desc: 'Terrestrial ecosystems expand with plants and arthropods.',
+            imgCredit: 'Muséum national d\'Histoire naturelle — CC BY 3.0' },
+          { name: 'Ludlow',    start: 419.2, end: 423,   desc: 'Coral reefs expand; marine and land plant life diversifies.' },
+          { name: 'Wenlock',   start: 423,   end: 430.5, desc: 'Marine life recovers; coral reef systems flourish.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Diorama_of_a_Silurian_seafloor_-_cephalopod,_trilobites,_fish,_crinoids,_gastropods,_corals,_algae,_starfish,_brachiopods,_bryozoans_(44982225194).jpg&width=320',
+            imgCredit: 'Wikimedia Commons — CC BY 2.0',
+            imgDesc: 'Silurian seafloor — cephalopods, trilobites, crinoids and corals.' },
+          { name: 'Llandovery',start: 430.5, end: 444,   desc: 'Life recovers after extinction; seas rise and reef growth resumes.' },
+        ]
+      },
+      { name: 'Ordovician', start: 444, end: 488, desc: 'Complex marine life; mass extinction.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ordovician_sea.jpg&width=320',
+        imgCredit: 'Heinrich Harder, 1920 — Public domain',
+            imgDesc: 'Ordovician marine life',
+        epochs: [
+          { name: 'Late Ordovician',   start: 444, end: 458.4, desc: 'Global glaciation triggers the massive Ordovician–Silurian mass extinction.' },
+          { name: 'Middle Ordovician', start: 458.4, end: 470,   desc: 'Seas flood continents; intense volcanism and tectonic activity.' },
+          { name: 'Early Ordovician',  start: 470,   end: 488,   desc: 'Great Biodiversification Event; marine life explodes in diversity.' },
+        ]
+      },
+      { name: 'Cambrian', start: 488, end: 542, desc: 'Marine animals with hard shells appear.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Anomalocaris_canadensis.jpg&width=320',
+        imgCredit: 'Heinrich Harder, 1920 — Public domain',
+            imgDesc: 'Anomalocaris — Cambrian apex predator',
+        epochs: [
+          { name: 'Furongian',   start: 488, end: 497,   desc: 'Trilobites diversify then collapse; Cambrian life ends.' },
+          { name: 'Miaolingian', start: 497, end: 509,   desc: 'Major trilobite extinctions; new species emerge after.' },
+          { name: 'Series 2',    start: 509, end: 521,   desc: 'First trilobites appear; early Cambrian extinction event follows.' },
+          { name: 'Terreneuvian',start: 521, end: 542,   desc: 'Cambrian explosion begins; complex animal groups emerge.',
+            img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Life_on_the_platform_margin_of_the_Miaolingian_sea,_North_China.png&width=320',
+            imgCredit: 'Wikimedia Commons — CC BY-SA 4.0',
+            imgDesc: 'Cambrian explosion — first complex animal groups emerge.' },
+        ]
+      },
+    ]
+  },
+  //no epochs after this
+  {
+    id: 'neoproterozoic', label: 'Neoproterozoic',  start: 542,  end: 1000, eon: 'Proterozoic', desc: 'Snowball Earth; first multicellular animals.', 
+    color: '#89bdd3', colorLight: '#c8e4f0', above: true 
+    ,periods: [
+      { name: 'Ediacaran', start: 542, end: 635, desc: 'First complex soft-bodied multicellular animals appear.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=DickinsoniaCostata.jpg&width=320',
+        imgCredit: 'Wikimedia Commons — CC BY-SA 3.0',
+            imgDesc: 'Dickinsonia costata — iconic Ediacaran organism.'
+  } ,{ name: 'Cryogenian', start: 635, end: 720, desc: 'Earth freezes over in Snowball Earth events.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Mollweide_Paleographic_Map_of_Earth,_690_Ma_(Cryogenian_Period).png&width=320',
+        imgCredit: 'Wikimedia Commons — CC BY-SA 4.0',
+            imgDesc: 'Paleogeographic map of Earth at 690 Ma — Snowball Earth.'
+} ,{ name: 'Tonian', start: 720, end: 1000, desc: 'Supercontinent Rodinia breaks apart; crust stretches and rifts.'
+} ]
+  },
+  {
+    id: 'mesoproterozoic', label: 'Mesoproterozoic', start: 1000, end: 1600, eon: 'Proterozoic', desc: 'Supercontinent Rodinia; sexual reproduction.',
+    color: '#f4a7b9', colorLight: '#fad4de', above: false 
+    ,periods: [
+      { name: 'Stenian', start: 1000, end: 1200, desc: 'Mountains form widely; supercontinent Rodinia coming together.'
+  } ,{ name: 'Ectasian', start: 1200, end: 1400, desc: 'Continental platforms expand; tectonic rifting begins worldwide.'
+} ,{ name: 'Calymmian', start: 1400, end: 1600, desc: 'Supercontinent Columbia begins breaking apart.'
+} ]
+  },
+  {
+    id: 'paleoproterozoic', label: 'Paleoproterozoic',start: 1600, end: 2500, eon: 'Proterozoic', desc: 'Great Oxidation Event; eukaryotes appear.',
+    color: '#f5b97f', colorLight: '#fad9b8', above: true 
+    ,periods: [
+      { name: 'Statherian', start: 1600, end: 1800, desc: 'Continents stabilize into cratons; first nucleated cells appear.'
+  } ,{ name: 'Orosirian', start: 1800, end: 2050, desc: 'Intense mountain-building shapes nearly every continent.',
+        img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Vredefort_Dome_STS51I-33-56AA.jpg&width=320',
+        imgCredit: 'NASA — Public domain',
+            imgDesc: 'Vredefort Dome — largest verified impact crater on Earth.'
+} ,{ name: 'Rhyacian', start: 2050, end: 2300, desc: 'Widespread volcanic activity floods Earth\'s surface with lava.'
+} ,{ name: 'Siderian', start: 2300, end: 2500, desc: 'Great Oxidation Event triggers first global glaciation.'
+} ]
+  },
+    //no periods after this
+    {
+    id: 'neoarchean', label: 'Neoarchean',   start: 2500, end: 2800, eon: 'Archean', above: false,
+    color: '#8a8a8a', colorLight: '#d0d0d0',
+    desc: 'Cyanobacteria begin producing oxygen.' },
+    {
+    id: 'mesoarchean', label: 'Mesoarchean',  start: 2800, end: 3200, eon: 'Archean', above: true,
+    color: '#b0b0b0', colorLight: '#e4e4e4',
+    desc: 'Earliest stromatolite reefs.' },
+    {
+    id: 'paleoarchean', label: 'Paleoarchean', start: 3200, end: 3600, eon: 'Archean', above: false,
+    color: '#8a8a8a', colorLight: '#d0d0d0',
+    desc: 'Oldest confirmed microbial fossils.' },
+    {id: 'eoarchean', label: 'Eoarchean',    start: 3600, end: 4000, eon: 'Archean', above: true,
+    color: '#b0b0b0', colorLight: '#e4e4e4',
+    desc: 'First stable continental crust.',
+    img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Acasta_Gneiss.jpg&width=320',
+    imgCredit: 'Mike Beauregard — CC BY 2.0',
+            imgDesc: 'Acasta Gneiss — oldest exposed continental crust' },
+    {id: 'latehadean', label: 'Late Hadean',  start: 4000, end: 4150, eon: 'Hadean', above: false,
+    color: '#8a8a8a', colorLight: '#d0d0d0',
+    desc: 'Late Heavy Bombardment; possible prebiotic chemistry.',
+    img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Vredefort_crater_LANDSAT.jpg&width=320',
+    imgCredit: 'NASA — Public domain',
+            imgDesc: 'Vredefort crater — largest known impact site' },
+    {id: 'earlyhadean', label: 'Early Hadean', start: 4150, end: 4570, eon: 'Hadean', above: true,
+    color: '#b0b0b0', colorLight: '#e4e4e4',
+    desc: 'Earth accretes; Moon-forming impact.',
+    img: 'https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Giant_Impact_Hypothesis.jpg&width=320',
+    imgCredit: 'NASA/JPL-Caltech — Public domain',
+            imgDesc: 'Giant impact — Moon-forming collision' },
+    ]
+
+const viewport      = document.getElementById('viewport');
+const canvas        = document.getElementById('canvas');
+const breadcrumb    = document.getElementById('breadcrumb');
+const breadcrumbEra = document.getElementById('breadcrumb-era');
+const breadcrumbPeriodSep = document.getElementById('breadcrumb-period-sep');
+const breadcrumbPeriod    = document.getElementById('breadcrumb-period');
+const backBtn       = document.getElementById('back-btn');
+const scalePill     = document.getElementById('scale-pill');
+
+// Registries
+const eraEls   = {}; // id -> { bar, node, stem, card }
+let baseEls    = []; // tl-base elements
+let periodEls  = []; // spawned period elements
+let epochEls   = []; // spawned epoch elements
+let activeEra  = null;
+let activePeriod = null; // which period was clicked (for breadcrumb only)
+let activeEraXFn = null;
+let canvasH, lineY;
+
+function getMetrics() {
+  canvasH = viewport.clientHeight || 500;
+  lineY   = Math.round(canvasH * 0.46);
+}
+
+function overviewX(mya) { return LEFT_PAD + mya * BASE_SCALE; }
+
+// Piecewise x: zooms era
+function makeXFn(era, zoomScale) {
+  const leftW = era.start * BASE_SCALE;
+  const eraW  = (era.end - era.start) * zoomScale;
+  return mya => {
+    if (mya <= era.start) return LEFT_PAD_ZOOMED + mya * BASE_SCALE;
+    if (mya >= era.end)   return LEFT_PAD_ZOOMED + leftW + eraW + (mya - era.end) * BASE_SCALE;
+    return LEFT_PAD_ZOOMED + leftW + (mya - era.start) * zoomScale;
+  };
+}
+
+// ── BUILD OVERVIEW ──────────────────────────────────────────────────
+function buildOverview() {
+  canvas.innerHTML = '';
+  clearStemSvg();
+  baseEls = []; periodEls = []; epochEls = [];
+  Object.keys(eraEls).forEach(k => delete eraEls[k]);
+  getMetrics();
+
+  const totalW = LEFT_PAD + TOTAL_MYA * BASE_SCALE + RIGHT_PAD;
+  canvas.style.cssText = `width:${totalW}px; height:${canvasH}px; transition:none;`;
+
+  function base(el) { el.classList.add('tl-base'); canvas.appendChild(el); baseEls.push(el); return el; }
+
+  const line = document.createElement('div');
+  line.className = 'timeline-line'; line.style.top = lineY + 'px';
+  base(line);
+
+  const nl = document.createElement('div');
+  nl.className = 'now-line';
+  nl.style.cssText = `left:${overviewX(0)}px; top:${lineY-14}px; height:30px;`;
+  base(nl);
+  const nlab = document.createElement('div');
+  nlab.className = 'now-label';
+  nlab.style.cssText = `left:${overviewX(0)+5}px; top:${lineY-20}px;`;
+  nlab.textContent = 'Now'; base(nlab);
+
+  const el = document.createElement('div');
+  el.className = 'now-line';
+  el.style.cssText = `left:${overviewX(TOTAL_MYA)}px; top:${lineY-14}px; height:30px;`;
+  base(el);
+  const elab = document.createElement('div');
+  elab.className = 'now-label';
+  elab.style.cssText = `left:${overviewX(TOTAL_MYA)+5}px; top:${lineY-20}px;`;
+  elab.textContent = '~4570 mya'; base(elab);
+
+  for (let m = 500; m <= TOTAL_MYA; m += 500) {
+    const x = overviewX(m);
+    const t = document.createElement('div');
+    t.className = 'tick'; t.style.cssText = `left:${x}px; top:${lineY-6}px; height:13px;`; base(t);
+    const tl = document.createElement('div');
+    tl.className = 'tick-label'; tl.style.cssText = `left:${x}px; top:${lineY+12}px;`;
+    tl.textContent = m + ' mya'; base(tl);
+  }
+
+  eras.forEach((era, idx) => buildEraEls(era, idx));
+  // No legend at the "eras" (overview) level.
+  document.getElementById('legend').innerHTML = '';
+
+  // Overview scale + breadcrumb state
+  scalePill.textContent = `${BASE_SCALE.toFixed(1)}px = 1 million years`;
+  scalePill.classList.add('visible');
+  setBreadcrumb('overview');
+
+  // Show "Now" and "~4570 mya" markers only in the full overview.
+  setNowMarkersVisible(true);
+}
+
+function setNowMarkersVisible(visible) {
+  const display = visible ? '' : 'none';
+  canvas.querySelectorAll('.now-line, .now-label').forEach(el => {
+    el.style.display = display;
+  });
+}
+
+function buildEraEls(era, idx) {
+  // Many entries (notably Precambrian subdivisions) omit `above`.
+  // In that case, auto-alternate to keep a consistent zig-zag layout.
+  const above = (typeof era.above === 'boolean') ? era.above : (idx % 2 === 0);
+  const STEM_H = 55, CARD_H = 118;
+  const cardLeft = overviewX((era.start + era.end) / 2) - 95;
+  const anchorX  = cardLeft + 95;
+  const hasPeriods = Array.isArray(era.periods) && era.periods.length > 0;
+
+  const bar = document.createElement('div');
+  bar.className = 'era-bar';
+  bar.style.cssText = `left:${overviewX(era.start)}px; width:${(era.end-era.start)*BASE_SCALE}px; top:${lineY-4}px; background:${era.color || DEFAULT_GREY};`;
+  if (hasPeriods) {
+    bar.addEventListener('click', () => zoomEra(era));
+  } else {
+    bar.style.cursor = 'default';
+  }
+  canvas.appendChild(bar);
+
+  const node = document.createElement('div');
+  node.className = 'era-node';
+  node.style.cssText = `left:${anchorX}px; top:${lineY}px; background:${era.color || DEFAULT_GREY};`;
+  if (hasPeriods) {
+    node.addEventListener('click', e => { e.stopPropagation(); zoomEra(era, e.clientX, e.clientY); });
+  } else {
+    node.style.cursor = 'default';
+  }
+  canvas.appendChild(node);
+
+  const stem = document.createElement('div');
+  stem.className = 'stem';
+  const NODE_HALF = 10;
+  stem.style.cssText = `left:${anchorX}px; top:${above ? lineY - STEM_H : lineY + NODE_HALF}px; height:${STEM_H - NODE_HALF}px; opacity:0;`;
+  canvas.appendChild(stem);
+
+  const card = document.createElement('div');
+  card.className = 'era-card' + (hasPeriods ? '' : ' era-card--muted');
+  card.style.cssText = `left:${cardLeft}px; top:${above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H}px;`;
+  card.innerHTML = `
+    ${era.eon ? `<div class="era-card-eon">${era.eon} Eon</div>` : ''}
+    <div class="era-card-name" style="background:${era.colorLight || DEFAULT_GREY_LIGHT}">${era.label} Era</div>
+    <div class="era-card-desc">${era.desc}</div>
+    <div class="era-card-dates" style="color:${darkenHex(era.color || DEFAULT_GREY, 0.45)}">${era.start}–${era.end} mya</div>
+  `;
+  if (hasPeriods) {
+    card.addEventListener('click', e => { hideEraCardTooltip(); zoomEra(era, e.clientX, e.clientY); });
+    card.addEventListener('mouseenter', e => showEraCardTooltip(e));
+    card.addEventListener('mousemove', e => positionEraCardTooltip(e));
+    card.addEventListener('mouseleave', () => hideEraCardTooltip());
+  } else {
+    card.style.cursor = 'default';
+  }
+  canvas.appendChild(card);
+
+  eraEls[era.id] = { bar, node, stem, card };
+
+  // Spring drag — attach after canvas append so offsetWidth is available
+  requestAnimationFrame(() => makeDraggableCard(card, stem, node));
+}
+
+// ── EXPAND PRECAMBRIAN ──────────────────────────────────────────────
+function expandPrecambrian() {
+  const era = eras.find(e => e.id === 'precambrian');
+  if (activeEra === era && !activePeriod) return;
+  if (activePeriod) { zoomOutEpochs(); return; }
+  zoomEra(era);
+}
+
+// ── ZOOM INTO ERA ──────────────────────────────────────────────────
+function zoomEra(era, cx, cy) {
+  if (zoomLocked) return;
+  if (activeEra === era && !activePeriod) return;
+  if (activeEra === era && activePeriod) { zoomOutEpochs(cx, cy); return; }
+  if (!Array.isArray(era.periods) || era.periods.length === 0) return;
+
+  const ox = cx ?? window.innerWidth / 2;
+  const oy = cy ?? window.innerHeight / 2;
+
+  animateZoomIn(ox, oy, () => {
+    activeEra = era; activePeriod = null;
+    setBreadcrumb('era', era.label);
+    document.getElementById('legend').innerHTML = '';
+
+    const eraDur    = era.end - era.start;
+    const zoomScale = getEraPeriodZoomScale(era, viewport.clientWidth);
+    activeEraXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * zoomScale;
+
+    scalePill.textContent = `${zoomScale.toFixed(1)}px = 1 million years`;
+    scalePill.classList.add('visible');
+    setNowMarkersVisible(false);
+
+    baseEls.forEach(el => { if (!el.classList.contains('timeline-line')) el.remove(); });
+    baseEls = baseEls.filter(el => el.classList.contains('timeline-line'));
+    eras.forEach(e => { const el = eraEls[e.id]; el.bar.remove(); el.node.remove(); el.stem.remove(); el.card.remove(); });
+    clearStemSvg();
+
+    const eraW = eraDur * zoomScale;
+    const newW = LEFT_PAD_ZOOMED + eraW + RIGHT_PAD;
+    canvas.style.transition = 'none';
+    canvas.style.width = newW + 'px';
+    canvas.style.height = canvasH + 'px'; // lock height so lineY never shifts
+    const tlLine = baseEls.find(el => el.classList.contains('timeline-line'));
+    if (tlLine) tlLine.style.width = newW + 'px';
+    viewport.scrollLeft = 0;
+    spawnPeriods(era, activeEraXFn);
+    preloadEraImages(era);
+  });
+}
+
+// ── SPAWN PERIOD MARKERS ──────────────────────────────────────────
+function spawnEraBoundaryLabels(era, xFn, registry) {
+  [[era.start, 'start'], [era.end, 'end']].forEach(([mya, side]) => {
+    const x = xFn(mya);
+    const tick = document.createElement('div');
+    tick.className = 'period-tick';
+    tick.style.cssText = `left:${x}px; top:${lineY-10}px; height:21px;`;
+    canvas.appendChild(tick); registry.push(tick);
+
+    const label = document.createElement('div');
+    label.className = 'period-tick-label';
+    const formatted = mya % 1 === 0 ? mya : mya.toFixed(1);
+    label.textContent = formatted + ' mya';
+    label.style.cssText = `left:${x}px; top:${lineY+14}px; transform:translateX(-50%); font-weight:500; color:var(--ink2);`;
+    canvas.appendChild(label); registry.push(label);
+    requestAnimationFrame(() => { tick.classList.add('visible'); label.classList.add('visible'); });
+  });
+}
+
+function spawnPeriods(era, xFn) {
+  const alts   = ALTS;
+  const STEM_H = 65, CARD_H = 108;
+  const NODE_HALF = 10;
+
+  era.periods.forEach((period, pi) => {
+    const above = alts[pi % alts.length];
+    const midX  = xFn((period.start + period.end) / 2);
+
+    [period.start, period.end].forEach(mya => {
+      if (mya === era.start || mya === era.end) return;
+      const x = xFn(mya);
+      const tooCloseToStart = Math.abs(x - xFn(era.start)) < 40;
+      const tooCloseToEnd   = Math.abs(x - xFn(era.end))   < 40;
+      if (tooCloseToStart || tooCloseToEnd) return;
+      const tick = document.createElement('div');
+      tick.className = 'period-tick';
+      tick.style.cssText = `left:${x}px; top:${lineY-6}px; height:13px;`;
+      canvas.appendChild(tick); periodEls.push(tick);
+      const tl = document.createElement('div');
+      tl.className = 'period-tick-label';
+      tl.style.cssText = `left:${x}px; top:${lineY+12}px;`;
+      tl.textContent = mya + ' mya';
+      canvas.appendChild(tl); periodEls.push(tl);
+      requestAnimationFrame(() => { tick.classList.add('visible'); tl.classList.add('visible'); });
+    });
+
+    const segLeft = xFn(period.start);
+    const segW    = xFn(period.end) - xFn(period.start);
+    const seg = document.createElement('div');
+    seg.dataset.role = 'seg';
+    seg.dataset.mya1 = period.start;
+    seg.dataset.mya2 = period.end;
+    seg.style.cssText =
+      `position:absolute; height:10px; background:${getPeriodColor(era,pi)}; top:${lineY-4}px;` +
+      ` left:${segLeft}px; width:${segW}px; opacity:0; transition:opacity 0.45s; pointer-events:none; z-index:20;`;
+    canvas.appendChild(seg); periodEls.push(seg);
+    requestAnimationFrame(() => seg.style.opacity = '1');
+
+    const pnode = document.createElement('div');
+    pnode.className = 'period-node';
+    pnode.style.cssText = `left:${midX}px; top:${lineY}px; background:${getPeriodColor(era, pi)};`;
+    canvas.appendChild(pnode); periodEls.push(pnode);
+    requestAnimationFrame(() => pnode.classList.add('visible'));
+
+    const stemTop    = above ? lineY - STEM_H : lineY + NODE_HALF;
+    const stemHeight = STEM_H - NODE_HALF;
+    const pstem = document.createElement('div');
+    pstem.className = 'period-stem';
+    pstem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${stemHeight}px; opacity:0;`;
+    canvas.appendChild(pstem); periodEls.push(pstem);
+    // pstem visibility managed by makeDraggableCard SVG line
+
+    const hasEpochs = period.epochs && period.epochs.length > 0;
+    const pcard = document.createElement('div');
+    pcard.className = 'period-card' + (hasEpochs ? '' : ' period-card--muted');
+    const cardTop = above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H;
+    pcard.style.cssText = `left:${midX - CARD_W()/2}px; top:${cardTop}px;`;
+    pcard.innerHTML = `
+      <div class="period-card-era">${era.label} Era</div>
+      <div class="period-card-name" style="background:${era.colorLight}">${period.name} Period</div>
+      <div class="period-card-desc">${period.desc}</div>
+      <div class="period-card-dates" style="color:${darkenHex(getPeriodColor(era, pi), 0.45)}">${period.start}–${period.end} mya</div>
+    `;
+    if (hasEpochs) {
+      pcard.style.cursor = 'pointer';
+      pcard.addEventListener('click', e => { e.stopPropagation(); hidePeriodCardTooltip(); zoomPeriod(era, period, e.clientX, e.clientY); });
+      pnode.addEventListener('click', e => { e.stopPropagation(); zoomPeriod(era, period, e.clientX, e.clientY); });
+      pcard.addEventListener('mouseenter', e => { showPeriodCardTooltip(e); });
+      pcard.addEventListener('mousemove',  e => { positionPeriodCardTooltip(e); });
+      pcard.addEventListener('mouseleave', () => { hidePeriodCardTooltip(); });
+    } else {
+      pcard.style.cursor = 'default';
+      pnode.style.cursor = 'default';
+    }
+    if (period.img && !hasEpochs) {
+      attachImgTooltipListeners(pcard, period);
+      attachImgTooltipListeners(pnode, period);
+    }
+    canvas.appendChild(pcard); periodEls.push(pcard);
+    requestAnimationFrame(() => {
+      pcard.classList.add('visible');
+      makeDraggableCard(pcard, pstem, pnode);
+    });
+  });
+
+  spawnEraBoundaryLabels(era, xFn, periodEls);
+}
+
+function zoomPeriod(era, clickedPeriod, cx, cy) {
+  if (zoomLocked || activePeriod) return;
+  zoomLocked = true;
+  hideImgTooltip();
+
+  const eraDur      = era.end - era.start;
+  const periodScale = getEraPeriodZoomScale(era, viewport.clientWidth);
+  const epochScale  = getEpochZoomScale(era, viewport.clientWidth);
+  const periodXFn   = t => LEFT_PAD_ZOOMED + (t - era.start) * periodScale;
+  const epochXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * epochScale;
+  const epochW      = LEFT_PAD_ZOOMED + eraDur * epochScale + RIGHT_PAD;
+  const tlLine      = baseEls.find(el => el.classList.contains('timeline-line'));
+  const EASE        = 'cubic-bezier(0.42,0,0.58,1)';
+  const T_FADE_OUT  = 200;
+  const T_EXPAND    = 700;
+  const T_TICK_IN   = 250;
+  const T_CARD_IN   = 350;
+
+  clearStemSvg();
+
+  // Tag each element by role so we can treat them differently
+  // cards/nodes/stems: fade out and remove
+  // segs/ticks: slide then remove
+  const toFade   = []; // cards, nodes, stems — fade out, then remove
+  const toSlide  = []; // segs, ticks — slide during expand, then remove
+
+  periodEls.forEach(el => {
+    const isTick = el.classList.contains('period-tick') || el.classList.contains('period-tick-label');
+    const isSeg  = el.dataset.role === 'seg';
+    if (isTick || isSeg) toSlide.push(el);
+    else toFade.push(el);
+  });
+
+  // ── Phase 1: fade out cards/nodes/stems (200ms) ──
+  toFade.forEach(el => {
+    el.style.transition = `opacity ${T_FADE_OUT}ms ease`;
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  });
+
+  // ── Phase 2 (after fade): slide ticks+segs, expand canvas (700ms) ──
+  setTimeout(() => {
+    toFade.forEach(el => el.remove());
+
+    toSlide.forEach(el => {
+      if (el.classList.contains('period-tick') || el.classList.contains('period-tick-label')) {
+        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED) / periodScale + era.start;
+        el.style.transition = `left ${T_EXPAND}ms ${EASE}`;
+        el.style.left = epochXFn(mya) + 'px';
+      } else {
+        // segment: animate left + width
+        const mya1 = parseFloat(el.dataset.mya1);
+        const mya2 = parseFloat(el.dataset.mya2);
+        el.style.transition = `left ${T_EXPAND}ms ${EASE}, width ${T_EXPAND}ms ${EASE}`;
+        el.style.left  = epochXFn(mya1) + 'px';
+        el.style.width = (epochXFn(mya2) - epochXFn(mya1)) + 'px';
+      }
+    });
+
+    canvas.style.height = canvasH + 'px'; // keep height locked during animation
+    canvas.style.transition = `width ${T_EXPAND}ms ${EASE}`;
+    canvas.style.width = epochW + 'px';
+    if (tlLine) { tlLine.style.transition = `width ${T_EXPAND}ms ${EASE}`; tlLine.style.width = epochW + 'px'; }
+
+    // ── Phase 3 (after expand): remove sliders, spawn epoch ticks, fade in ──
+    setTimeout(() => {
+      toSlide.forEach(el => el.remove());
+      periodEls = [];
+      canvas.style.transition = '';
+      if (tlLine) tlLine.style.transition = '';
+
+      activePeriod = clickedPeriod;
+      setBreadcrumb('epochs', era.label);
+      buildPeriodLegend(era);
+      activeEraXFn = epochXFn;
+      scalePill.textContent = `${epochScale.toFixed(1)}px = 1 million years`;
+
+      const allEpochs = getAllEpochsWithPeriod(era);
+      const alts = ALTS;
+      const STEM_H = 65, CARD_H = 108, NODE_HALF = 10;
+      const tickEls = [];
+      const cardEls = [];
+
+      // Segments
+      era.periods.forEach((period, pi) => {
+        const seg = document.createElement('div');
+        seg.dataset.role = 'seg';
+        seg.dataset.mya1 = period.start;
+        seg.dataset.mya2 = period.end;
+        seg.style.cssText =
+          `position:absolute; height:10px; background:${getPeriodColor(era,pi)}; top:${lineY-4}px;` +
+          ` left:${epochXFn(period.start)}px; width:${epochXFn(period.end)-epochXFn(period.start)}px;` +
+          ` opacity:0; transition:opacity ${T_TICK_IN}ms ease; pointer-events:none; z-index:20;`;
+        canvas.appendChild(seg); epochEls.push(seg); tickEls.push(seg);
+      });
+
+      // Era boundary ticks
+      [[era.start],[era.end]].forEach(([mya]) => {
+        const x = epochXFn(mya);
+        const tick = document.createElement('div');
+        tick.className = 'period-tick';
+        tick.style.cssText = `left:${x}px; top:${lineY-10}px; height:21px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+        canvas.appendChild(tick); epochEls.push(tick); tickEls.push(tick);
+        const lbl = document.createElement('div');
+        lbl.className = 'period-tick-label';
+        const fmt = mya % 1 === 0 ? mya : mya.toFixed(1);
+        lbl.textContent = fmt + ' mya';
+        lbl.style.cssText = `left:${x}px; top:${lineY+14}px; transform:translateX(-50%); font-weight:500; color:var(--ink2); opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+        canvas.appendChild(lbl); epochEls.push(lbl); tickEls.push(lbl);
+      });
+
+      // Epoch boundary ticks
+      allEpochs.forEach(epoch => {
+        [epoch.start, epoch.end].forEach(mya => {
+          if (mya === era.start || mya === era.end) return;
+          const x = epochXFn(mya);
+          if (Math.abs(x - epochXFn(era.start)) < 40 || Math.abs(x - epochXFn(era.end)) < 40) return;
+          const tick = document.createElement('div');
+          tick.className = 'epoch-tick';
+          tick.style.cssText = `left:${x}px; top:${lineY-6}px; height:13px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+          canvas.appendChild(tick); epochEls.push(tick); tickEls.push(tick);
+          const tl = document.createElement('div');
+          tl.className = 'epoch-tick-label';
+          tl.style.cssText = `left:${x}px; top:${lineY+12}px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+          tl.textContent = mya + ' mya';
+          canvas.appendChild(tl); epochEls.push(tl); tickEls.push(tl);
+        });
+      });
+
+      // Fade ticks + segs in
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        tickEls.forEach(el => el.style.opacity = '1');
+      }));
+
+      // Epoch cards/nodes/stems — spawn hidden
+      allEpochs.forEach((epoch, ei) => {
+        const above   = alts[ei % alts.length];
+        const midX    = epochXFn((epoch.start + epoch.end) / 2);
+        const stemTop = above ? lineY - STEM_H : lineY + NODE_HALF;
+        const cardTop = above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H;
+
+        const enode = document.createElement('div');
+        enode.className = 'epoch-node';
+        enode.style.cssText = `left:${midX}px; top:${lineY}px; background:${epoch.periodColor}; opacity:0; transition:opacity ${T_CARD_IN}ms ease; pointer-events:none;`;
+        canvas.appendChild(enode); epochEls.push(enode);
+
+        const estem = document.createElement('div');
+        estem.className = 'epoch-stem';
+        estem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
+        canvas.appendChild(estem); epochEls.push(estem);
+
+        const ecard = document.createElement('div');
+        ecard.className = 'epoch-card epoch-card--muted';
+        ecard.style.cssText = `left:${midX - CARD_W()/2}px; top:${cardTop}px; cursor:default; opacity:0; transition:opacity ${T_CARD_IN}ms ease; pointer-events:none;`;
+        ecard.innerHTML = `
+          <div class="epoch-card-period">${epoch.periodName} Period</div>
+          <div class="epoch-card-name" style="background:${era.colorLight}">${epoch.name}</div>
+          <div class="epoch-card-desc">${epoch.desc}</div>
+          <div class="epoch-card-dates" style="color:${darkenHex(epoch.periodColor, 0.45)}">${epoch.start}–${epoch.end} mya</div>
+        `;
+        canvas.appendChild(ecard); epochEls.push(ecard);
+        cardEls.push({ ecard, enode, estem, ei });
+
+        requestAnimationFrame(() => {
+          makeDraggableCard(ecard, estem, enode);
+          if (epoch.img) { attachImgTooltipListeners(ecard, epoch); attachImgTooltipListeners(enode, epoch); }
+        });
+      });
+
+      // ── Phase 4: staggered fade-in of cards (after ticks settled) ──
+      setTimeout(() => {
+        cardEls.forEach(({ ecard, enode, estem, ei }) => {
+          setTimeout(() => {
+            ecard.style.opacity  = '1';
+            ecard.style.pointerEvents = 'auto';
+            ecard.classList.add('visible');
+            enode.style.opacity  = '1';
+            enode.style.pointerEvents = 'auto';
+            enode.classList.add('visible');
+            // estem opacity is managed by makeDraggableCard (SVG line replaces it)
+          }, ei * 40);
+        });
+        zoomLocked = false;
+      }, T_TICK_IN + 20);
+
+    }, T_EXPAND + 20);
+  }, T_FADE_OUT + 20);
+}
+
+// ── ZOOM OUT OF EPOCHS → back to period view ──────────────────────
+function zoomOutEpochs(cx, cy) {
+  if (zoomLocked || !activePeriod) return;
+  zoomLocked = true;
+  hideImgTooltip();
+  const era = activeEra;
+
+  const eraDur      = era.end - era.start;
+  const periodScale = getEraPeriodZoomScale(era, viewport.clientWidth);
+  const epochScale  = getEpochZoomScale(era, viewport.clientWidth);
+  const periodXFn   = t => LEFT_PAD_ZOOMED + (t - era.start) * periodScale;
+  const epochXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * epochScale;
+  const periodW     = LEFT_PAD_ZOOMED + eraDur * periodScale + RIGHT_PAD;
+  const tlLine      = baseEls.find(el => el.classList.contains('timeline-line'));
+  const EASE        = 'cubic-bezier(0.42,0,0.58,1)';
+  const T_FADE_OUT  = 200;
+  const T_SHRINK    = 700;
+  const T_TICK_IN   = 250;
+  const T_CARD_IN   = 350;
+
+  clearStemSvg();
+
+  const toFade  = [];
+  const toSlide = [];
+  epochEls.forEach(el => {
+    const isTick = el.classList.contains('epoch-tick') || el.classList.contains('epoch-tick-label') ||
+                   el.classList.contains('period-tick') || el.classList.contains('period-tick-label');
+    const isSeg  = el.dataset.role === 'seg';
+    if (isTick || isSeg) toSlide.push(el);
+    else toFade.push(el);
+  });
+
+  // ── Phase 1: fade out epoch cards/nodes/stems (200ms) ──
+  toFade.forEach(el => {
+    el.style.transition = `opacity ${T_FADE_OUT}ms ease`;
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  });
+
+  // ── Phase 2 (after fade): slide ticks+segs, shrink canvas (700ms) ──
+  setTimeout(() => {
+    toFade.forEach(el => el.remove());
+
+    toSlide.forEach(el => {
+      if (el.classList.contains('epoch-tick') || el.classList.contains('epoch-tick-label') ||
+          el.classList.contains('period-tick') || el.classList.contains('period-tick-label')) {
+        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED) / epochScale + era.start;
+        el.style.transition = `left ${T_SHRINK}ms ${EASE}`;
+        el.style.left = periodXFn(mya) + 'px';
+      } else {
+        const mya1 = parseFloat(el.dataset.mya1);
+        const mya2 = parseFloat(el.dataset.mya2);
+        el.style.transition = `left ${T_SHRINK}ms ${EASE}, width ${T_SHRINK}ms ${EASE}`;
+        el.style.left  = periodXFn(mya1) + 'px';
+        el.style.width = (periodXFn(mya2) - periodXFn(mya1)) + 'px';
+      }
+    });
+
+    canvas.style.height = canvasH + 'px'; // keep height locked during animation
+    canvas.style.transition = `width ${T_SHRINK}ms ${EASE}`;
+    canvas.style.width = periodW + 'px';
+    if (tlLine) { tlLine.style.transition = `width ${T_SHRINK}ms ${EASE}`; tlLine.style.width = periodW + 'px'; }
+
+    // ── Phase 3 (after shrink): remove sliders, spawn period ticks, fade in ──
+    setTimeout(() => {
+      toSlide.forEach(el => el.remove());
+      epochEls = [];
+      canvas.style.transition = '';
+      if (tlLine) tlLine.style.transition = '';
+
+      activePeriod = null;
+      setBreadcrumb('era', era.label);
+      document.getElementById('legend').innerHTML = '';
+      activeEraXFn = periodXFn;
+      scalePill.textContent = `${periodScale.toFixed(1)}px = 1 million years`;
+
+      const alts = ALTS;
+      const STEM_H = 65, CARD_H = 108, NODE_HALF = 10;
+      const tickEls = [];
+      const cardEls = [];
+
+      // Segments
+      era.periods.forEach((period, pi) => {
+        const seg = document.createElement('div');
+        seg.dataset.role = 'seg';
+        seg.dataset.mya1 = period.start;
+        seg.dataset.mya2 = period.end;
+        seg.style.cssText =
+          `position:absolute; height:10px; background:${getPeriodColor(era,pi)}; top:${lineY-4}px;` +
+          ` left:${periodXFn(period.start)}px; width:${periodXFn(period.end)-periodXFn(period.start)}px;` +
+          ` opacity:0; transition:opacity ${T_TICK_IN}ms ease; pointer-events:none; z-index:20;`;
+        canvas.appendChild(seg); periodEls.push(seg); tickEls.push(seg);
+      });
+
+      // Era boundary ticks
+      [[era.start],[era.end]].forEach(([mya]) => {
+        const x = periodXFn(mya);
+        const tick = document.createElement('div');
+        tick.className = 'period-tick';
+        tick.style.cssText = `left:${x}px; top:${lineY-10}px; height:21px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+        canvas.appendChild(tick); periodEls.push(tick); tickEls.push(tick);
+        const lbl = document.createElement('div');
+        lbl.className = 'period-tick-label';
+        const fmt = mya % 1 === 0 ? mya : mya.toFixed(1);
+        lbl.textContent = fmt + ' mya';
+        lbl.style.cssText = `left:${x}px; top:${lineY+14}px; transform:translateX(-50%); font-weight:500; color:var(--ink2); opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+        canvas.appendChild(lbl); periodEls.push(lbl); tickEls.push(lbl);
+      });
+
+      // Period boundary ticks
+      era.periods.forEach(period => {
+        [period.start, period.end].forEach(mya => {
+          if (mya === era.start || mya === era.end) return;
+          const x = periodXFn(mya);
+          if (Math.abs(x - periodXFn(era.start)) < 40 || Math.abs(x - periodXFn(era.end)) < 40) return;
+          const tick = document.createElement('div');
+          tick.className = 'period-tick';
+          tick.style.cssText = `left:${x}px; top:${lineY-6}px; height:13px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+          canvas.appendChild(tick); periodEls.push(tick); tickEls.push(tick);
+          const tl = document.createElement('div');
+          tl.className = 'period-tick-label';
+          tl.style.cssText = `left:${x}px; top:${lineY+12}px; opacity:0; transition:opacity ${T_TICK_IN}ms ease;`;
+          tl.textContent = mya + ' mya';
+          canvas.appendChild(tl); periodEls.push(tl); tickEls.push(tl);
+        });
+      });
+
+      // Fade ticks + segs in
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        tickEls.forEach(el => el.style.opacity = '1');
+      }));
+
+      // Period cards/nodes/stems — spawn hidden
+      era.periods.forEach((period, pi) => {
+        const above   = alts[pi % alts.length];
+        const midX    = periodXFn((period.start + period.end) / 2);
+        const color   = getPeriodColor(era, pi);
+        const stemTop = above ? lineY - STEM_H : lineY + NODE_HALF;
+        const cardTop = above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H;
+
+        const pnode = document.createElement('div');
+        pnode.className = 'period-node';
+        pnode.style.cssText = `left:${midX}px; top:${lineY}px; background:${color}; opacity:0; transition:opacity ${T_CARD_IN}ms ease; pointer-events:none;`;
+        canvas.appendChild(pnode); periodEls.push(pnode);
+
+        const pstem = document.createElement('div');
+        pstem.className = 'period-stem';
+        pstem.style.cssText = `left:${midX}px; top:${stemTop}px; height:${STEM_H-NODE_HALF}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease;`;
+        canvas.appendChild(pstem); periodEls.push(pstem);
+
+        const hasEpochs = period.epochs && period.epochs.length > 0;
+        const pcard = document.createElement('div');
+        pcard.className = 'period-card' + (hasEpochs ? '' : ' period-card--muted');
+        pcard.style.cssText = `left:${midX - CARD_W()/2}px; top:${cardTop}px; opacity:0; transition:opacity ${T_CARD_IN}ms ease; pointer-events:none;`;
+        pcard.innerHTML = `
+          <div class="period-card-era">${era.label} Era</div>
+          <div class="period-card-name" style="background:${era.colorLight}">${period.name} Period</div>
+          <div class="period-card-desc">${period.desc}</div>
+          <div class="period-card-dates" style="color:${darkenHex(color, 0.45)}">${period.start}–${period.end} mya</div>
+        `;
+        if (hasEpochs) {
+          pcard.style.cursor = 'pointer';
+          pcard.addEventListener('click', e => { e.stopPropagation(); hidePeriodCardTooltip(); zoomPeriod(era, period, e.clientX, e.clientY); });
+          pnode.addEventListener('click', e => { e.stopPropagation(); zoomPeriod(era, period, e.clientX, e.clientY); });
+          pcard.addEventListener('mouseenter', e => showPeriodCardTooltip(e));
+          pcard.addEventListener('mousemove',  e => positionPeriodCardTooltip(e));
+          pcard.addEventListener('mouseleave', () => hidePeriodCardTooltip());
+        } else {
+          pcard.style.cursor = 'default';
+          pnode.style.cursor = 'default';
+        }
+        if (period.img && !hasEpochs) {
+          attachImgTooltipListeners(pcard, period);
+          attachImgTooltipListeners(pnode, period);
+        }
+        canvas.appendChild(pcard); periodEls.push(pcard);
+        cardEls.push({ pcard, pnode, pstem, pi });
+        requestAnimationFrame(() => makeDraggableCard(pcard, pstem, pnode));
+      });
+
+      // ── Phase 4: staggered fade-in of period cards ──
+      setTimeout(() => {
+        cardEls.forEach(({ pcard, pnode, pstem, pi }) => {
+          setTimeout(() => {
+            // Use .visible class so CSS pointer-events:auto kicks in
+            pcard.style.opacity = '1';
+            pcard.style.pointerEvents = 'auto';
+            pcard.classList.add('visible');
+            pnode.style.opacity = '1';
+            pnode.style.pointerEvents = 'auto';
+            pnode.classList.add('visible');
+            // pstem visibility managed by makeDraggableCard SVG line
+          }, pi * 40);
+        });
+        zoomLocked = false;
+      }, T_TICK_IN + 20);
+
+    }, T_SHRINK + 20);
+  }, T_FADE_OUT + 20);
+}
+
+// ── ZOOM OUT → overview ──────────────────────────────────────────
+function zoomOut(cx, cy) {
+  if (zoomLocked || !activeEra) return;
+  const ox = cx ?? window.innerWidth / 2;
+  const oy = cy ?? window.innerHeight / 2;
+
+  animateZoomOut(ox, oy, () => {
+    activeEra = null; activePeriod = null; activeEraXFn = null;
+    [...epochEls, ...periodEls].forEach(el => el.remove());
+    periodEls = []; epochEls = [];
+    buildOverview();
+  });
+}
+
+function buildLegend() {
+  document.getElementById('legend').innerHTML =
+    eras.map(e => `<div class="legend-item"><div class="legend-swatch" style="background:${e.color || DEFAULT_GREY}"></div><span>${e.label}</span></div>`).join('');
+}
+
+function buildPeriodLegend(era) {
+  document.getElementById('legend').innerHTML =
+    era.periods.map((p, pi) => {
+      const c = getPeriodColor(era, pi);
+      return `<div class="legend-item"><div class="legend-swatch" style="background:${c}"></div><span>${p.name} Period</span></div>`;
+    }).join('');
+}
+
+// ── Interactions ──────────────────────────────────────────────────
+const backHint = document.getElementById('back-hint');
+
+function isEmptyStageTarget(target) {
+  return !target.closest('.era-card,.era-node,.era-bar,.period-card,.period-node,.epoch-card,.epoch-node,.stem-svg,header,#legend,#back-hint,#img-tooltip');
+}
+
+viewport.addEventListener('mousemove', e => {
+  if (!activeEra || zoomLocked) { backHint.classList.remove('visible'); return; }
+  if (!isEmptyStageTarget(e.target)) { backHint.classList.remove('visible'); return; }
+
+  const label = activePeriod
+    ? `← back to ${activeEra.label} Era`
+    : '← back to all Eras';
+  backHint.textContent = label;
+  backHint.style.left = (e.clientX + 14) + 'px';
+  backHint.style.top  = (e.clientY - 30) + 'px';
+  backHint.classList.add('visible');
+});
+
+viewport.addEventListener('mouseleave', () => backHint.classList.remove('visible'));
+
+viewport.addEventListener('click', e => {
+  if (!activeEra) return;
+  // Ignore clicks on any interactive card/node/bar element or the SVG stem layer
+  if (e.target.closest('.era-card,.era-node,.era-bar,.period-card,.period-node,.epoch-card,.epoch-node,.stem-svg')) return;
+  if (activePeriod) zoomOutEpochs(e.clientX, e.clientY);
+  else zoomOut(e.clientX, e.clientY);
+});
+
+// Back button: always goes to overview (eras level) no matter what level
+backBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  zoomOut(e.clientX, e.clientY);
+});
+
+// Breadcrumb era name: goes back to era level from epoch level
+breadcrumbEra.addEventListener('click', e => {
+  e.stopPropagation();
+  if (activePeriod) zoomOutEpochs(e.clientX, e.clientY);
+  else if (activeEra) zoomOut(e.clientX, e.clientY);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { zoomOut(); }
+});
+
+// Drag to scroll
+let isDragging = false, dragStartX, dragScrollL, dragMoved = false;
+viewport.addEventListener('mousedown', e => {
+  isDragging = true; dragStartX = e.pageX; dragScrollL = viewport.scrollLeft; dragMoved = false;
+});
+window.addEventListener('mouseup', e => { isDragging = false; if (dragMoved) e.stopImmediatePropagation(); });
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.pageX - dragStartX;
+  if (Math.abs(dx) > 3) dragMoved = true;
+  viewport.scrollLeft = dragScrollL - dx;
+});
+
+// ── Touch scroll for mobile ──────────────────────────────────────
+let touchStartX = 0, touchScrollL = 0, touchMoved = false;
+viewport.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].pageX;
+  touchScrollL = viewport.scrollLeft;
+  touchMoved = false;
+}, { passive: true });
+viewport.addEventListener('touchmove', e => {
+  const dx = e.touches[0].pageX - touchStartX;
+  if (Math.abs(dx) > 4) touchMoved = true;
+  viewport.scrollLeft = touchScrollL - dx;
+}, { passive: true });
+viewport.addEventListener('touchend', e => {
+  if (touchMoved) e.stopPropagation();
+});
+
+window.addEventListener('resize', () => { if (!activeEra) buildOverview(); });
+
+// ── IMAGE PRELOADER ────────────────────────────────────────────────
+function preloadEraImages(era) {
+  const urls = new Set();
+  era.periods.forEach(period => {
+    if (period.img) urls.add(period.img);
+    if (period.epochs) {
+      period.epochs.forEach(epoch => { if (epoch.img) urls.add(epoch.img); });
+    }
+  });
+  urls.forEach(url => { const img = new Image(); img.src = url; });
+}
+
+// ── IMAGE TOOLTIP ──────────────────────────────────────────────────
+// On mobile, show tooltip on tap (touchend) instead of hover
+function attachImgTooltipListeners(el, period) {
+  if (IS_MOBILE()) {
+    el.addEventListener('touchend', e => {
+      if (touchMoved) return;
+      e.stopPropagation();
+      if (imgTooltip.classList.contains('visible')) { hideImgTooltip(); return; }
+      imgTooltipImg.src = period.img;
+      imgTooltipDesc.textContent   = period.imgDesc || period.name;
+      imgTooltipCredit.textContent = period.imgCredit || '';
+      // Position near the tapped element
+      const rect = el.getBoundingClientRect();
+      const x = Math.min(rect.left, window.innerWidth - 200);
+      const y = rect.top > 200 ? rect.top - 220 : rect.bottom + 8;
+      imgTooltip.style.left = Math.max(4, x) + 'px';
+      imgTooltip.style.top  = y + 'px';
+      imgTooltip.classList.add('visible');
+      // Auto-hide after 3s
+      clearTimeout(tooltipTimer);
+      tooltipTimer = setTimeout(hideImgTooltip, 3000);
+    });
+  } else {
+    el.addEventListener('mouseenter', e => showImgTooltip(period, el, e));
+    el.addEventListener('mouseleave', hideImgTooltip);
+  }
+}
+const imgTooltip      = document.getElementById('img-tooltip');
+const imgTooltipImg   = document.getElementById('img-tooltip-img');
+const imgTooltipDesc  = document.getElementById('img-tooltip-desc');
+const imgTooltipCredit= document.getElementById('img-tooltip-credit');
+let tooltipTimer;
+
+function showImgTooltip(period, anchorEl, e) {
+  if (!period.img) return;
+  clearTimeout(tooltipTimer);
+  imgTooltipImg.src = period.img;
+  imgTooltipDesc.textContent  = period.imgDesc || period.name;
+  imgTooltipCredit.textContent = period.imgCredit || '';
+  positionTooltip(e);
+  imgTooltip.classList.add('visible');
+}
+function hideImgTooltip() {
+  clearTimeout(tooltipTimer);
+  imgTooltip.classList.remove('visible');
+}
+function positionTooltip(e) {
+  const TW = 240, TH = 210, vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX + 16, y = e.clientY - 20;
+  if (x + TW > vw - 10) x = e.clientX - TW - 16;
+  if (y + TH > vh - 10) y = vh - TH - 10;
+  if (y < 10) y = 10;
+  imgTooltip.style.left = x + 'px'; imgTooltip.style.top = y + 'px';
+}
+document.addEventListener('mousemove', e => { if (imgTooltip.classList.contains('visible')) positionTooltip(e); });
+
+// ── ERA CARD TOOLTIP ──────────────────────────────────────────────
+const eraCardTooltip = document.getElementById('era-card-tooltip');
+
+function showEraCardTooltip(e) { positionEraCardTooltip(e); eraCardTooltip.classList.add('visible'); }
+function hideEraCardTooltip() { eraCardTooltip.classList.remove('visible'); }
+function positionEraCardTooltip(e) {
+  const TW = eraCardTooltip.offsetWidth || 200, TH = eraCardTooltip.offsetHeight || 28;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX + 14, y = e.clientY - 36;
+  if (x + TW > vw - 10) x = e.clientX - TW - 14;
+  if (y < 10) y = e.clientY + 14;
+  eraCardTooltip.style.left = x + 'px'; eraCardTooltip.style.top = y + 'px';
+}
+
+// ── PERIOD CARD TOOLTIP ──────────────────────────────────────────────
+const periodCardTooltip = document.getElementById('period-card-tooltip');
+
+function showPeriodCardTooltip(e) {
+  positionPeriodCardTooltip(e);
+  periodCardTooltip.classList.add('visible');
+}
+function hidePeriodCardTooltip() {
+  periodCardTooltip.classList.remove('visible');
+}
+function positionPeriodCardTooltip(e) {
+  const TW = periodCardTooltip.offsetWidth || 200;
+  const TH = periodCardTooltip.offsetHeight || 28;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX + 14, y = e.clientY - 36;
+  if (x + TW > vw - 10) x = e.clientX - TW - 14;
+  if (y < 10) y = e.clientY + 14;
+  periodCardTooltip.style.left = x + 'px';
+  periodCardTooltip.style.top  = y + 'px';
+}
+
+// ── DARK MODE ────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  document.getElementById('theme-toggle-label').textContent = isDark ? 'Light' : 'Dark';
+}
+
+// ── SPRING DRAG SYSTEM ───────────────────────────────────────────
+let stemSvg = null;
+function getStemSvg() {
+  if (!stemSvg || !stemSvg.parentNode) {
+    stemSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    stemSvg.classList.add('stem-svg');
+    canvas.appendChild(stemSvg);
+  }
+  return stemSvg;
+}
+function clearStemSvg() {
+  if (stemSvg) { stemSvg.remove(); stemSvg = null; }
+}
+
+function springStep(pos, vel, target, stiffness, damping, dt) {
+  const force = -stiffness * (pos - target) - damping * vel;
+  const newVel = vel + force * dt;
+  const newPos = pos + newVel * dt;
+  return { pos: newPos, vel: newVel };
+}
+
+function makeDraggableCard(card, stemEl, nodeEl) {
+  // Hide the static stem permanently — the SVG line takes over from here
+  if (stemEl) { stemEl.style.opacity = '0'; stemEl.style.pointerEvents = 'none'; }
+
+  let restCardLeft, restCardTop, nodeX, nodeY, restDist;
+
+  function updateRestState() {
+    nodeX = parseFloat(nodeEl.style.left);
+    nodeY = parseFloat(nodeEl.style.top);
+    restCardLeft = parseFloat(card.style.left);
+    restCardTop  = parseFloat(card.style.top);
+    const w = card.offsetWidth  || 180;
+    const h = card.offsetHeight || 120;
+    restDist = Math.hypot((restCardLeft + w/2) - nodeX, (restCardTop + h/2) - nodeY);
+  }
+
+  // Create the persistent SVG line immediately
+  const liveLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  liveLine.setAttribute('stroke-linecap', 'round');
+  getStemSvg().appendChild(liveLine);
+
+  function getCardCenter() {
+    const w = card.offsetWidth  || 180;
+    const h = card.offsetHeight || 120;
+    return { x: parseFloat(card.style.left) + w/2, y: parseFloat(card.style.top) + h/2 };
+  }
+
+  function drawLine(stretch) {
+    const nc = { x: nodeX, y: nodeY };
+    const cc = getCardCenter();
+    const isDark = document.documentElement.classList.contains('dark');
+    const baseColor = isDark ? '200,190,170' : '26,23,16';
+    const opacity = Math.max(0.1, 0.6 - stretch * 0.5);
+    const width   = Math.max(0.4, 1.5 - stretch * 1.1);
+    liveLine.setAttribute('x1', nc.x); liveLine.setAttribute('y1', nc.y);
+    liveLine.setAttribute('x2', cc.x); liveLine.setAttribute('y2', cc.y);
+    liveLine.setAttribute('stroke', `rgba(${baseColor},${opacity.toFixed(2)})`);
+    liveLine.setAttribute('stroke-width', width.toFixed(2));
+  }
+
+  // Draw at-rest immediately once layout is settled
+  requestAnimationFrame(() => {
+    updateRestState();
+    drawLine(0);
+  });
+
+  // Pointer state
+  let dragging = false;
+  let hasDragged = false;
+  let dragStartX, dragStartY, cardStartLeft, cardStartTop;
+  let velX = 0, velY = 0, lastX, lastY, lastT;
+  let springRaf = null;
+
+  function cancelSpring() {
+    if (springRaf) { cancelAnimationFrame(springRaf); springRaf = null; }
+  }
+
+  card.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    updateRestState();
+    cancelSpring();
+
+    dragging = true;
+    hasDragged = false;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    cardStartLeft = parseFloat(card.style.left);
+    cardStartTop  = parseFloat(card.style.top);
+    lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+    velX = 0; velY = 0;
+
+    card.style.transition = 'none';
+    card.style.zIndex = '300';
+    e.stopPropagation();
+  });
+
+  // Suppress click after a real drag
+  card.addEventListener('click', e => {
+    if (hasDragged) { e.stopPropagation(); e.preventDefault(); hasDragged = false; }
+  }, true);
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+
+    // Only commit to drag mode once the pointer moves more than 4px
+    if (!hasDragged && Math.hypot(dx, dy) > 4) hasDragged = true;
+    if (!hasDragged) return;
+
+    card.style.left = (cardStartLeft + dx) + 'px';
+    card.style.top  = (cardStartTop  + dy) + 'px';
+
+    const now = performance.now();
+    const dt  = Math.max(1, now - lastT) / 1000;
+    velX = (e.clientX - lastX) / dt;
+    velY = (e.clientY - lastY) / dt;
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
+
+    const cc = getCardCenter();
+    const dist = Math.hypot(cc.x - nodeX, cc.y - nodeY);
+    const stretch = Math.min(1, Math.max(0, (dist - restDist) / 200));
+    drawLine(stretch);
+  });
+
+  window.addEventListener('mouseup', e => {
+    if (!dragging) return;
+    dragging = false;
+    card.style.zIndex = '';
+
+    // If the pointer barely moved, treat as a click — no spring needed
+    if (!hasDragged) return;
+
+    // Swallow the click that the browser fires after mouseup so it doesn't
+    // accidentally trigger back-navigation on the viewport
+    window.addEventListener('click', e => e.stopPropagation(), { capture: true, once: true });
+
+    let cx = parseFloat(card.style.left);
+    let cy = parseFloat(card.style.top);
+    let vx = velX, vy = velY;
+    const STIFFNESS = 280, DAMPING = 26;
+    let lastTime = performance.now();
+
+    function frame(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.032);
+      lastTime = now;
+
+      const rx = springStep(cx, vx, restCardLeft, STIFFNESS, DAMPING, dt);
+      const ry = springStep(cy, vy, restCardTop,  STIFFNESS, DAMPING, dt);
+      cx = rx.pos; vx = rx.vel;
+      cy = ry.pos; vy = ry.vel;
+
+      card.style.left = cx + 'px';
+      card.style.top  = cy + 'px';
+
+      const cc = getCardCenter();
+      const dist = Math.hypot(cc.x - nodeX, cc.y - nodeY);
+      const stretch = Math.min(1, Math.max(0, (dist - restDist) / 200));
+      drawLine(stretch);
+
+      const settled = Math.abs(cx - restCardLeft) < 0.3 && Math.abs(cy - restCardTop) < 0.3
+                   && Math.abs(vx) < 1.5 && Math.abs(vy) < 1.5;
+      if (settled) {
+        card.style.left = restCardLeft + 'px';
+        card.style.top  = restCardTop  + 'px';
+        drawLine(0); // draw cleanly at rest
+        return;
+      }
+      springRaf = requestAnimationFrame(frame);
+    }
+    springRaf = requestAnimationFrame(frame);
+  });
+}
+
+buildOverview();
+</script>
+</body>
+</html>
