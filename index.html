@@ -36,31 +36,48 @@
 
   /* ── Dark mode toggle ── */
   #theme-toggle {
-    margin-left: 0px;
-    width: 36px; height: 20px;
-    background: var(--ink3);
-    border-radius: 10px;
+    margin-left: auto;
+    width: 64px; height: 36px;
+    background: #e0dbd0;
+    border-radius: 18px;
     border: none; cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    transition: background 0.25s;
+    transition: background 0.3s;
+    display: flex; align-items: center;
+    padding: 0 6px;
+    justify-content: space-between;
   }
-  #theme-toggle::after {
-    content: '';
+  .dark #theme-toggle {
+    background: #2a2820;
+  }
+  .toggle-sun, .toggle-moon {
+    font-size: 22px;
+    line-height: 1;
+    transition: color 0.3s, opacity 0.3s;
+    z-index: 1;
+    pointer-events: none;
+    width: 22px;
+  }
+  .toggle-sun  { color: #e8a020; opacity: 1; }
+  .toggle-moon { color: #8a8270; opacity: 0.5; }
+  .dark .toggle-sun  { color: #8a8270; opacity: 0.5; }
+  .dark .toggle-moon { color: #e8a020; opacity: 1; }
+  .toggle-knob {
     position: absolute;
-    top: 3px; left: 3px;
-    width: 14px; height: 14px;
+    width: 28px; height: 28px;
     border-radius: 50%;
-    background: var(--bg);
-    transition: transform 0.25s, background 0.25s;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    top: 4px; left: 4px;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+    pointer-events: none;
   }
-  .dark #theme-toggle::after {
-    transform: translateX(16px);
+  .dark .toggle-knob {
+    transform: translateX(28px);
+    background: #3a3830;
   }
-  #theme-toggle-label {
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--ink3); cursor: pointer; flex-shrink: 0; margin-left: auto;
-  }
+  #theme-toggle-label { display: none; }
 
   header {
     padding: 26px 60px 16px;
@@ -276,6 +293,7 @@
     opacity: 0; transition: opacity 0.15s;
     white-space: nowrap;
   }
+  .dark .period-card-tooltip { background: #ffffff; color: #1a1710; }
   .period-card-tooltip.visible { opacity: 1; }
 
   /* ── Cursor back hint ── */
@@ -313,14 +331,52 @@
     margin-bottom: 2px;
   }
 
+  /* ── Mobile image overlay + sheet ── */
+  #img-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 350;
+    background: rgba(0,0,0,0.45);
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #img-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (max-width: 600px) {
+    #img-overlay { display: block; }
+    #img-tooltip {
+      /* Reset desktop positioning styles */
+      left: 50% !important;
+      top: auto !important;
+      bottom: 0;
+      transform: translateX(-50%) translateY(100%);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      opacity: 1 !important;
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      border-radius: 12px 12px 0 0;
+      border-bottom: none;
+      z-index: 400;
+    }
+    #img-tooltip.visible {
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    #img-tooltip img { height: 220px; }
+    #img-tooltip .img-caption { font-size: 11px; padding: 10px 12px 20px; }
+    #img-tooltip .img-caption b { font-size: 14px; }
+  }
+
   /* ── Legend ── */
-  .legend {
-    display: flex; gap: 20px; padding: 12px 60px;
+  .legend { display: flex; gap: 20px; padding: 12px 60px;
     border-top: 1px solid rgba(128,120,100,0.15);
     font-size: 12px; color: var(--ink3); letter-spacing: 0.06em;
     text-transform: uppercase; align-items: center; flex-shrink: 0;
     transition: opacity 0.5s;
   }
+  .legend:empty { display: none; }
   .legend.faded { opacity: 0; pointer-events: none; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-swatch { width: 16px; height: 8px; border: 1px solid rgba(26,23,16,0.2); }
@@ -341,12 +397,29 @@
     html, body { overflow: hidden; }
 
     header {
-      padding: 12px 16px 10px;
-      gap: 10px;
+      padding: 10px 16px;
+      gap: 4px;
+      flex-wrap: wrap;
+      align-items: center;
     }
-    header h1 { font-size: 18px; }
-    #breadcrumb { font-size: 10px; letter-spacing: 0.05em; }
-    #theme-toggle-label { display: none; }
+    header h1 { font-size: 18px; flex: 1; }
+    #theme-toggle { margin-left: 0; order: 2; width: 52px; height: 28px; border-radius: 14px; }
+    .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
+    .dark .toggle-knob { transform: translateX(24px); }
+    .toggle-sun, .toggle-moon { font-size: 16px; width: 16px;}
+
+    /* Breadcrumb always sits on its own row below title, fixed height */
+    #breadcrumb {
+      width: 100%;
+      order: 3;
+      flex-basis: 100%;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      opacity: 1 !important;         /* always visible to reserve space */
+      min-height: 16px;              /* constant height even when empty */
+      display: flex;
+      align-items: center;
+    }
 
     .legend {
       padding: 8px 16px;
@@ -366,12 +439,6 @@
     #back-hint { display: none; }
     .period-card-tooltip { display: none; }
 
-    /* img tooltip becomes a tap-triggered panel on mobile */
-    #img-tooltip { width: 180px; }
-    #img-tooltip img { height: 120px; }
-    #img-tooltip .img-caption { font-size: 10px; padding: 6px 8px; }
-    #img-tooltip .img-caption b { font-size: 11px; }
-
     .scroll-viewport { -webkit-overflow-scrolling: touch; }
   }
 </style>
@@ -386,8 +453,11 @@
       <span class="era-name crumb" id="breadcrumb-era"></span>
       <span id="breadcrumb-period-sep" style="display:none">&nbsp;/&nbsp;<span class="era-name crumb" id="breadcrumb-period"></span></span>
     </div>
-    <span id="theme-toggle-label" onclick="toggleTheme()">Dark</span>
-    <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+    <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+      <span class="toggle-sun">☀</span>
+      <span class="toggle-knob"></span>
+      <span class="toggle-moon">☾</span>
+    </button>
   </header>
 
   <div class="stage">
@@ -404,11 +474,12 @@
 <div id="period-card-tooltip" class="period-card-tooltip">View all Epochs in this Period</div>
 <div id="era-card-tooltip" class="period-card-tooltip">View all Periods in this Era</div>
 <div id="scale-pill"></div>
+<div id="img-overlay"></div>
 <div id="img-tooltip"><img id="img-tooltip-img" src="" alt=""><div class="img-caption"><b id="img-tooltip-desc"></b><span id="img-tooltip-credit"></span></div></div>
 
 <script>
 const LEFT_PAD   = 80;
-const LEFT_PAD_ZOOMED = 160;
+const LEFT_PAD_ZOOMED = () => IS_MOBILE() ? 80 : 160;
 const RIGHT_PAD  = 120;
 const TOTAL_MYA  = 4570;
 const BASE_SCALE = 1; // 1px per mya
@@ -576,18 +647,33 @@ function animateZoomOut(cx, cy, cb) { runZoomTransition(cx, cy, cb); }
 
 
 function setBreadcrumb(mode, eraLabel) {
+  const legend = document.getElementById('legend');
+
   if (mode === 'overview') {
-    breadcrumb.style.opacity = '0';
+    if (IS_MOBILE()) {
+      // Show 'All Eras' as default text on mobile
+      breadcrumb.style.opacity = '1';
+      backBtn.style.visibility = 'visible';
+      backBtn.textContent = 'All Eras';
+      breadcrumbEra.textContent = '';
+      breadcrumbPeriodSep.style.display = 'none';
+    } else {
+      breadcrumb.style.opacity = '0';
+    }
     breadcrumbEra.textContent = '';
     breadcrumbPeriodSep.style.display = 'none';
-
     backBtn.classList.add('active');
     breadcrumbEra.classList.remove('active');
     breadcrumbPeriod.classList.remove('active');
+    legend.innerHTML = ''; // hide legend at overview level
     return;
   }
 
   breadcrumb.style.opacity = '1';
+  if (IS_MOBILE()) {
+    backBtn.style.visibility = 'visible';
+    backBtn.textContent = '← All Eras';
+  }
   breadcrumbEra.textContent = eraLabel ? eraLabel + ' Era' : '';
   backBtn.classList.remove('active');
 
@@ -596,12 +682,14 @@ function setBreadcrumb(mode, eraLabel) {
     breadcrumbPeriodSep.style.display = 'none';
     breadcrumbPeriod.textContent = '';
     breadcrumbPeriod.classList.remove('active');
+    legend.innerHTML = ''; // hide legend at period level
   } else {
-    // epochs
+    // epochs — show legend
     breadcrumbEra.classList.remove('active');
     breadcrumbPeriod.textContent = 'Periods / Epochs';
     breadcrumbPeriodSep.style.display = 'inline';
     breadcrumbPeriod.classList.add('active');
+    if (IS_MOBILE()) legend.classList.remove('mobile-hidden');
   }
 }
 
@@ -909,9 +997,9 @@ function makeXFn(era, zoomScale) {
   const leftW = era.start * BASE_SCALE;
   const eraW  = (era.end - era.start) * zoomScale;
   return mya => {
-    if (mya <= era.start) return LEFT_PAD_ZOOMED + mya * BASE_SCALE;
-    if (mya >= era.end)   return LEFT_PAD_ZOOMED + leftW + eraW + (mya - era.end) * BASE_SCALE;
-    return LEFT_PAD_ZOOMED + leftW + (mya - era.start) * zoomScale;
+    if (mya <= era.start) return LEFT_PAD_ZOOMED() + mya * BASE_SCALE;
+    if (mya >= era.end)   return LEFT_PAD_ZOOMED() + leftW + eraW + (mya - era.end) * BASE_SCALE;
+    return LEFT_PAD_ZOOMED() + leftW + (mya - era.start) * zoomScale;
   };
 }
 
@@ -1064,7 +1152,7 @@ function zoomEra(era, cx, cy) {
 
     const eraDur    = era.end - era.start;
     const zoomScale = getEraPeriodZoomScale(era, viewport.clientWidth);
-    activeEraXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * zoomScale;
+    activeEraXFn    = t => LEFT_PAD_ZOOMED() + (t - era.start) * zoomScale;
 
     scalePill.textContent = `${zoomScale.toFixed(1)}px = 1 million years`;
     scalePill.classList.add('visible');
@@ -1076,7 +1164,7 @@ function zoomEra(era, cx, cy) {
     clearStemSvg();
 
     const eraW = eraDur * zoomScale;
-    const newW = LEFT_PAD_ZOOMED + eraW + RIGHT_PAD;
+    const newW = LEFT_PAD_ZOOMED() + eraW + RIGHT_PAD;
     canvas.style.transition = 'none';
     canvas.style.width = newW + 'px';
     canvas.style.height = canvasH + 'px'; // lock height so lineY never shifts
@@ -1204,9 +1292,9 @@ function zoomPeriod(era, clickedPeriod, cx, cy) {
   const eraDur      = era.end - era.start;
   const periodScale = getEraPeriodZoomScale(era, viewport.clientWidth);
   const epochScale  = getEpochZoomScale(era, viewport.clientWidth);
-  const periodXFn   = t => LEFT_PAD_ZOOMED + (t - era.start) * periodScale;
-  const epochXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * epochScale;
-  const epochW      = LEFT_PAD_ZOOMED + eraDur * epochScale + RIGHT_PAD;
+  const periodXFn   = t => LEFT_PAD_ZOOMED() + (t - era.start) * periodScale;
+  const epochXFn    = t => LEFT_PAD_ZOOMED() + (t - era.start) * epochScale;
+  const epochW      = LEFT_PAD_ZOOMED() + eraDur * epochScale + RIGHT_PAD;
   const tlLine      = baseEls.find(el => el.classList.contains('timeline-line'));
   const EASE        = 'cubic-bezier(0.42,0,0.58,1)';
   const T_FADE_OUT  = 200;
@@ -1242,7 +1330,7 @@ function zoomPeriod(era, clickedPeriod, cx, cy) {
 
     toSlide.forEach(el => {
       if (el.classList.contains('period-tick') || el.classList.contains('period-tick-label')) {
-        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED) / periodScale + era.start;
+        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED()) / periodScale + era.start;
         el.style.transition = `left ${T_EXPAND}ms ${EASE}`;
         el.style.left = epochXFn(mya) + 'px';
       } else {
@@ -1395,9 +1483,9 @@ function zoomOutEpochs(cx, cy) {
   const eraDur      = era.end - era.start;
   const periodScale = getEraPeriodZoomScale(era, viewport.clientWidth);
   const epochScale  = getEpochZoomScale(era, viewport.clientWidth);
-  const periodXFn   = t => LEFT_PAD_ZOOMED + (t - era.start) * periodScale;
-  const epochXFn    = t => LEFT_PAD_ZOOMED + (t - era.start) * epochScale;
-  const periodW     = LEFT_PAD_ZOOMED + eraDur * periodScale + RIGHT_PAD;
+  const periodXFn   = t => LEFT_PAD_ZOOMED() + (t - era.start) * periodScale;
+  const epochXFn    = t => LEFT_PAD_ZOOMED() + (t - era.start) * epochScale;
+  const periodW     = LEFT_PAD_ZOOMED() + eraDur * periodScale + RIGHT_PAD;
   const tlLine      = baseEls.find(el => el.classList.contains('timeline-line'));
   const EASE        = 'cubic-bezier(0.42,0,0.58,1)';
   const T_FADE_OUT  = 200;
@@ -1431,7 +1519,7 @@ function zoomOutEpochs(cx, cy) {
     toSlide.forEach(el => {
       if (el.classList.contains('epoch-tick') || el.classList.contains('epoch-tick-label') ||
           el.classList.contains('period-tick') || el.classList.contains('period-tick-label')) {
-        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED) / epochScale + era.start;
+        const mya = (parseFloat(el.style.left) - LEFT_PAD_ZOOMED()) / epochScale + era.start;
         el.style.transition = `left ${T_SHRINK}ms ${EASE}`;
         el.style.left = periodXFn(mya) + 'px';
       } else {
@@ -1637,6 +1725,8 @@ viewport.addEventListener('mouseleave', () => backHint.classList.remove('visible
 
 viewport.addEventListener('click', e => {
   if (!activeEra) return;
+  // If mobile image sheet is open, don't trigger zoom-out
+  if (imgOverlay.classList.contains('visible')) return;
   // Ignore clicks on any interactive card/node/bar element or the SVG stem layer
   if (e.target.closest('.era-card,.era-node,.era-bar,.period-card,.period-node,.epoch-card,.epoch-node,.stem-svg')) return;
   if (activePeriod) zoomOutEpochs(e.clientX, e.clientY);
@@ -1710,20 +1800,8 @@ function attachImgTooltipListeners(el, period) {
     el.addEventListener('touchend', e => {
       if (touchMoved) return;
       e.stopPropagation();
-      if (imgTooltip.classList.contains('visible')) { hideImgTooltip(); return; }
-      imgTooltipImg.src = period.img;
-      imgTooltipDesc.textContent   = period.imgDesc || period.name;
-      imgTooltipCredit.textContent = period.imgCredit || '';
-      // Position near the tapped element
-      const rect = el.getBoundingClientRect();
-      const x = Math.min(rect.left, window.innerWidth - 200);
-      const y = rect.top > 200 ? rect.top - 220 : rect.bottom + 8;
-      imgTooltip.style.left = Math.max(4, x) + 'px';
-      imgTooltip.style.top  = y + 'px';
-      imgTooltip.classList.add('visible');
-      // Auto-hide after 3s
-      clearTimeout(tooltipTimer);
-      tooltipTimer = setTimeout(hideImgTooltip, 3000);
+      e.preventDefault(); // block the synthesized click that follows
+      showImgSheet(period);
     });
   } else {
     el.addEventListener('mouseenter', e => showImgTooltip(period, el, e));
@@ -1731,11 +1809,32 @@ function attachImgTooltipListeners(el, period) {
   }
 }
 const imgTooltip      = document.getElementById('img-tooltip');
+const imgOverlay      = document.getElementById('img-overlay');
 const imgTooltipImg   = document.getElementById('img-tooltip-img');
 const imgTooltipDesc  = document.getElementById('img-tooltip-desc');
 const imgTooltipCredit= document.getElementById('img-tooltip-credit');
 let tooltipTimer;
 
+// ── Mobile: slide-up sheet ────────────────────────────────────────
+function showImgSheet(period) {
+  clearTimeout(tooltipTimer);
+  imgTooltipImg.src = period.img;
+  imgTooltipDesc.textContent   = period.imgDesc || period.name;
+  imgTooltipCredit.textContent = period.imgCredit || '';
+  imgOverlay.classList.add('visible');
+  imgTooltip.classList.add('visible');
+}
+
+function hideImgSheet() {
+  imgTooltip.classList.remove('visible');
+  imgOverlay.classList.remove('visible');
+}
+
+// Tap overlay to close
+imgOverlay.addEventListener('click', hideImgSheet);
+imgOverlay.addEventListener('touchend', e => { e.preventDefault(); hideImgSheet(); });
+
+// ── Desktop: follow-cursor tooltip ───────────────────────────────
 function showImgTooltip(period, anchorEl, e) {
   if (!period.img) return;
   clearTimeout(tooltipTimer);
@@ -1748,6 +1847,7 @@ function showImgTooltip(period, anchorEl, e) {
 function hideImgTooltip() {
   clearTimeout(tooltipTimer);
   imgTooltip.classList.remove('visible');
+  imgOverlay.classList.remove('visible');
 }
 function positionTooltip(e) {
   const TW = 240, TH = 210, vw = window.innerWidth, vh = window.innerHeight;
@@ -1796,8 +1896,18 @@ function positionPeriodCardTooltip(e) {
 
 // ── DARK MODE ────────────────────────────────────────────────────
 function toggleTheme() {
-  const isDark = document.documentElement.classList.toggle('dark');
-  document.getElementById('theme-toggle-label').textContent = isDark ? 'Light' : 'Dark';
+  document.documentElement.classList.toggle('dark');
+  // SVG stroke attributes are not CSS — redraw all stem lines immediately
+  if (stemSvg) {
+    const isDark = document.documentElement.classList.contains('dark');
+    const baseColor = isDark ? '200,190,170' : '26,23,16';
+    stemSvg.querySelectorAll('line').forEach(line => {
+      const currentStroke = line.getAttribute('stroke') || '';
+      const opacityMatch = currentStroke.match(/,([\d.]+)\)$/);
+      const opacity = opacityMatch ? opacityMatch[1] : '0.6';
+      line.setAttribute('stroke', `rgba(${baseColor},${opacity})`);
+    });
+  }
 }
 
 // ── SPRING DRAG SYSTEM ───────────────────────────────────────────
