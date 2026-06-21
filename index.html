@@ -641,6 +641,20 @@ function getPeriodCardBg(color) {
   return mixHex(color, '#ffffff', 0.82);
 }
 
+function getEraHoverImg(era) {
+  if (era.img) return era;
+  if (!Array.isArray(era.periods)) return null;
+  for (const period of era.periods) {
+    if (period.img) return period;
+    if (Array.isArray(period.epochs)) {
+      for (const epoch of period.epochs) {
+        if (epoch.img) return epoch;
+      }
+    }
+  }
+  return null;
+}
+
 function computeRequiredScaleForCards(entities, cardWidthPx, gapPx, alts, midFn) {
   let required = 0;
 
@@ -1154,6 +1168,7 @@ function buildOverview() {
   }
 
   eras.forEach((era, idx) => buildEraEls(era, idx));
+  preloadOverviewImages();
   // No legend at the "eras" (overview) level.
   document.getElementById('legend').innerHTML = '';
 
@@ -1182,13 +1197,14 @@ function buildEraEls(era, idx) {
   const cardLeft = overviewX((era.start + era.end) / 2) - halfW;
   const anchorX  = cardLeft + halfW;
   const hasPeriods = Array.isArray(era.periods) && era.periods.length > 0;
+  const hoverImg = getEraHoverImg(era);
 
   const bar = document.createElement('div');
   bar.className = 'era-bar';
   bar.style.cssText = `left:${overviewX(era.start)}px; width:${(era.end-era.start)*BASE_SCALE}px; top:${lineY-4}px; background:${era.color || DEFAULT_GREY};`;
   if (hasPeriods) {
     bar.addEventListener('click', () => zoomEra(era));
-  } else {
+  } else if (!hoverImg) {
     bar.style.cursor = 'default';
   }
   canvas.appendChild(bar);
@@ -1198,7 +1214,7 @@ function buildEraEls(era, idx) {
   node.style.cssText = `left:${anchorX}px; top:${lineY}px; background:${era.color || DEFAULT_GREY};`;
   if (hasPeriods) {
     node.addEventListener('click', e => { e.stopPropagation(); zoomEra(era, e.clientX, e.clientY); });
-  } else {
+  } else if (!hoverImg) {
     node.style.cursor = 'default';
   }
   canvas.appendChild(node);
@@ -1221,11 +1237,14 @@ function buildEraEls(era, idx) {
   `;
   if (hasPeriods) {
     card.addEventListener('click', e => { hideEraCardTooltip(); zoomEra(era, e.clientX, e.clientY); });
-    card.addEventListener('mouseenter', e => showEraCardTooltip(e));
-    card.addEventListener('mousemove', e => positionEraCardTooltip(e));
-    card.addEventListener('mouseleave', () => hideEraCardTooltip());
-  } else {
+    if (!hoverImg) attachEraCardTooltipListeners(card, node, bar);
+  } else if (!hoverImg) {
     card.style.cursor = 'default';
+  }
+  if (hoverImg) {
+    attachImgTooltipListeners(card, hoverImg);
+    attachImgTooltipListeners(node, hoverImg);
+    attachImgTooltipListeners(bar, hoverImg);
   }
   canvas.appendChild(card);
 
@@ -1893,6 +1912,13 @@ viewport.addEventListener('touchend', e => {
 window.addEventListener('resize', () => { if (!activeEra) buildOverview(); });
 
 // ── IMAGE PRELOADER ────────────────────────────────────────────────
+function preloadOverviewImages() {
+  eras.forEach(era => {
+    const src = getEraHoverImg(era);
+    if (src?.img) { const img = new Image(); img.src = src.img; }
+  });
+}
+
 function preloadEraImages(era) {
   const urls = new Set();
   era.periods.forEach(period => {
@@ -1972,6 +1998,14 @@ document.addEventListener('mousemove', e => { if (imgTooltip.classList.contains(
 
 // ── ERA CARD TOOLTIP ──────────────────────────────────────────────
 const eraCardTooltip = document.getElementById('era-card-tooltip');
+
+function attachEraCardTooltipListeners(...els) {
+  els.forEach(el => {
+    el.addEventListener('mouseenter', e => showEraCardTooltip(e));
+    el.addEventListener('mousemove', e => positionEraCardTooltip(e));
+    el.addEventListener('mouseleave', () => hideEraCardTooltip());
+  });
+}
 
 function showEraCardTooltip(e) { positionEraCardTooltip(e); eraCardTooltip.classList.add('visible'); }
 function hideEraCardTooltip() { eraCardTooltip.classList.remove('visible'); }
