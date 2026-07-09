@@ -116,78 +116,19 @@
   }
 
   #made-by {
-    position: fixed; bottom: 14px; right: 20px; z-index: 10;
+    position: fixed; bottom: 10px; right: 16px; z-index: 10;
+    padding: 4px 12px;
+    background: var(--bg);
     font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--ink3); font-family: var(--mono);
     pointer-events: auto;
+    flex-shrink: 0; white-space: nowrap;
   }
   #made-by a {
     color: inherit; text-decoration: underline; text-underline-offset: 3px;
     transition: color 0.15s; cursor: pointer;
   }
   #made-by a:hover { color: var(--ink); }
-
-  /* ── Splash screen ── */
-  #splash {
-    position: fixed; inset: 0; z-index: 1000;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.5s ease;
-    padding: 24px;
-  }
-  #splash.hidden { opacity: 0; pointer-events: none; }
-  #splash-card {
-    background: var(--card-bg);
-    border: 1.5px solid var(--border);
-    box-shadow: 6px 6px 0 rgba(128,120,100,0.12);
-    padding: 40px 44px;
-    max-width: 520px;
-    width: 100%;
-  }
-  #splash-eon {
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--ink3); font-family: var(--mono); margin-bottom: 12px;
-  }
-  #splash-title {
-    font-family: var(--serif); font-size: clamp(28px, 5vw, 42px);
-    font-weight: 400; letter-spacing: -0.02em; line-height: 1.1;
-    color: var(--ink); margin-bottom: 18px;
-  }
-  #splash-title em { font-style: italic; color: var(--ink2); }
-  #splash-desc {
-    font-family: var(--mono); font-size: 13px; line-height: 1.7;
-    color: var(--ink2); margin-bottom: 28px;
-  }
-  #splash-steps {
-    display: flex; flex-direction: column; gap: 12px;
-    margin-bottom: 32px;
-    border-top: 1px solid rgba(128,120,100,0.15);
-    padding-top: 24px;
-  }
-  .splash-step {
-    display: flex; align-items: flex-start; gap: 14px;
-    font-family: var(--mono); font-size: 11px;
-    letter-spacing: 0.04em; color: var(--ink3); line-height: 1.5;
-  }
-  .splash-step-icon {
-    flex-shrink: 0; width: 22px; text-align: center;
-    color: var(--ink); font-size: 13px; margin-top: 1px;
-  }
-  #splash-btn {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
-    text-transform: uppercase; cursor: pointer;
-    background: var(--ink); color: var(--bg);
-    border: none; padding: 12px 28px;
-    transition: opacity 0.15s;
-    width: 100%;
-  }
-  #splash-btn:hover { opacity: 0.85; }
-
-  @media (max-width: 600px) {
-    #splash-card { padding: 28px 24px; }
-    #splash-title { font-size: 28px; }
-    .splash-step { font-size: 10px; }
-  }
 
   .stage { flex: 1; overflow: hidden; position: relative; }
   .scroll-viewport { width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; cursor: grab; }
@@ -475,7 +416,7 @@
   .legend {
     display: flex; gap: 20px;
     padding: 12px 60px;
-    padding-right: 168px;
+    padding-right: 184px;
     min-height: 41px;
     border-top: 1px solid rgba(128,120,100,0.15);
     font-size: 12px; color: var(--ink3); letter-spacing: 0.06em;
@@ -528,7 +469,7 @@
 
     .legend {
       padding: 8px 16px;
-      padding-right: 120px;
+      padding-right: 136px;
       gap: 10px;
       font-size: 10px;
       overflow-x: auto;
@@ -580,39 +521,9 @@
 <div id="img-tooltip"><img id="img-tooltip-img" src="" alt=""><div class="img-caption"><b id="img-tooltip-desc"></b><span id="img-tooltip-credit"></span></div></div>
 <div id="made-by">Made by <a href="https://adarshya.webflow.io/" target="_blank" rel="noopener">Adarshya</a></div>
 
-<div id="splash">
-  <div id="splash-card">
-    <div id="splash-eon">4,570 Million Years</div>
-    <h2 id="splash-title">Life <em>Through</em> Time</h2>
-    <p id="splash-desc">An interactive journey through Earth's geological history — from the planet's fiery formation to the rise of complex life and the age of humans.</p>
-    <div id="splash-steps">
-      <div class="splash-step">
-        <span class="splash-step-icon">←→</span>
-        <span>Scroll the timeline to explore geological eras</span>
-      </div>
-      <div class="splash-step">
-        <span class="splash-step-icon">⊕</span>
-        <span>Click any card to zoom into periods and epochs</span>
-      </div>
-      <div class="splash-step">
-        <span class="splash-step-icon">◎</span>
-        <span>Hover cards to see fossils and reconstructions</span>
-      </div>
-    </div>
-    <button id="splash-btn" onclick="dismissSplash()">Begin Exploring</button>
-  </div>
-</div>
-
 <script>
 const LEFT_PAD   = 80;
 const LEFT_PAD_ZOOMED = () => IS_MOBILE() ? 120 : 160;
-
-// ── SPLASH ───────────────────────────────────────────────────────
-function dismissSplash() {
-  const splash = document.getElementById('splash');
-  splash.classList.add('hidden');
-  setTimeout(() => { splash.style.display = 'none'; }, 500);
-}
 const RIGHT_PAD  = 120;
 const TOTAL_MYA  = 4570;
 const BASE_SCALE = 1; // 1px per mya
@@ -1140,7 +1051,6 @@ function toggleTimeScale(e) {
   if (layoutAnimating || zoomLocked) return;
   const sourcePositions = captureLayoutPositions();
   timeProportional = !timeProportional;
-  try { localStorage.setItem('timeProportional', timeProportional ? '1' : '0'); } catch (_) {}
   runLayoutTransition(opts => performRebuild({ ...opts, skipScalePill: true }), sourcePositions);
 }
 
@@ -1346,9 +1256,7 @@ let activeEra  = null;
 let activePeriod = null; // which period was clicked (for breadcrumb only)
 let activeEraXFn = null;
 let viewMode = 'eras'; // 'eras' | 'periods' | 'epochs'
-let timeProportional = (() => {
-  try { return localStorage.getItem('timeProportional') !== '0'; } catch (_) { return true; }
-})();
+let timeProportional = true;
 let globalScale = BASE_SCALE;
 let canvasH, lineY;
 
