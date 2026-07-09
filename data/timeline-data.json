@@ -1,0 +1,624 @@
+{
+  "eras": [
+    {
+      "id": "cenozoic",
+      "label": "Cenozoic",
+      "start": 0,
+      "end": 66,
+      "eon": "Phanerozoic",
+      "color": "#e8b96a",
+      "colorLight": "#f7e4bb",
+      "above": false,
+      "desc": "Rise of mammals and flowering plants.",
+      "periods": [
+        {
+          "name": "Quaternary",
+          "start": 0,
+          "end": 2.6,
+          "desc": "Repeated ice ages occur. Humans evolve; modern ecosystems and climate develop.",
+          "epochs": [
+            {
+              "name": "Holocene",
+              "start": 0,
+              "end": 0.012,
+              "desc": "Age of humans — civilisation, agriculture and rapid climate change.",
+              "imgDesc": "Çatalhöyük — Neolithic farming settlement"
+            },
+            {
+              "name": "Pleistocene",
+              "start": 0.012,
+              "end": 2.6,
+              "desc": "Ice ages; megafauna extinction and early humans.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ice_age_fauna_of_northern_Spain_-_Mauricio_Ant%C3%B3n.jpg&width=320",
+              "imgCredit": "Mauricio Antón — CC BY 2.5",
+              "imgDesc": "Woolly mammoths, rhinos, horses, and cave lions roamed."
+            }
+          ]
+        },
+        {
+          "name": "Neogene",
+          "start": 2.6,
+          "end": 23,
+          "desc": "Mammals diversify on land and sea.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Megatherium_Knight.jpg&width=320",
+          "imgCredit": "Charles R. Knight, 1921 — Public domain",
+          "imgDesc": "Megatherium — giant ground sloth",
+          "epochs": [
+            {
+              "name": "Pliocene",
+              "start": 2.6,
+              "end": 5.3,
+              "desc": "Early human ancestors evolved; bipedalism and stone tools emerged.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Australopithecus_anamensis_skull.png&width=320",
+              "imgCredit": "Wikimedia Commons — Public domain",
+              "imgDesc": "Australopithecus anamensis — earliest known hominin"
+            },
+            {
+              "name": "Miocene",
+              "start": 5.3,
+              "end": 23,
+              "desc": "Apes evolved and diversified; human–chimp lineage split in the late epoch.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Proconsul_africanus.jpg&width=320",
+              "imgCredit": "Mauricio Antón — CC BY 2.5",
+              "imgDesc": "Apes evolved and diversified, with the human–chimp lineage splitting late."
+            }
+          ]
+        },
+        {
+          "name": "Paleogene",
+          "start": 23,
+          "end": 66,
+          "desc": "Primitive mammals and birds flourish.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Andrewsarchus_knight.jpg&width=320",
+          "imgCredit": "Charles R. Knight, 1923 — Public domain",
+          "imgDesc": "Andrewsarchus — largest land predator",
+          "epochs": [
+            {
+              "name": "Oligocene",
+              "start": 23,
+              "end": 33.9,
+              "desc": "Earth cools sharply; grasslands spread as modern mammals establish.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dinictis_and_Protoceras.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Dogs, nimravids, bears, weasels, and raccoons replaced the creodonts."
+            },
+            {
+              "name": "Eocene",
+              "start": 33.9,
+              "end": 56,
+              "desc": "Warm greenhouse Earth; modern mammals rapidly diversify.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Eohippus.jpg&width=320",
+              "imgCredit": "Wikimedia Commons — Public domain",
+              "imgDesc": "Hoofed animals diversified in a major radiation between Europe and North America."
+            },
+            {
+              "name": "Paleocene",
+              "start": 56,
+              "end": 66,
+              "desc": "Mammals quickly diversified, filling roles left by extinct dinosaurs.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Purgatorius_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Purgatorius — earliest known primate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mesozoic",
+      "label": "Mesozoic",
+      "start": 66,
+      "end": 251,
+      "eon": "Phanerozoic",
+      "color": "#a89fd8",
+      "colorLight": "#ddd8f4",
+      "above": true,
+      "desc": "Age of dinosaurs. First birds appear.",
+      "periods": [
+        {
+          "name": "Cretaceous",
+          "start": 66,
+          "end": 146,
+          "desc": "First flowering plants; dinosaurs go extinct.",
+          "epochs": [
+            {
+              "name": "Late Cretaceous",
+              "start": 66,
+              "end": 100.5,
+              "desc": "Dinosaurs reach their peak; K–Pg extinction event.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Impact_event.jpg&width=320",
+              "imgCredit": "Don Davis / NASA — Public domain",
+              "imgDesc": "K–Pg extinction wiped out ~75–80% of species, including all non-avian dinosaurs."
+            },
+            {
+              "name": "Early Cretaceous",
+              "start": 100.5,
+              "end": 146,
+              "desc": "First flowering plants; ceratopsians, spinosaurids and coelurosaurs emerge.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Spinosaurus_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Spinosaurids (shown here), Ceratopsians, Carcharodontosaurids and Coelurosaurs emerged."
+            }
+          ]
+        },
+        {
+          "name": "Jurassic",
+          "start": 146,
+          "end": 200,
+          "desc": "Dinosaurs dominant; first bird fossils.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Brontosaurus_Excelsus.jpg&width=320",
+          "imgCredit": "Charles R. Knight, 1897 — Public domain",
+          "imgDesc": "Brontosaurus — long-necked sauropod",
+          "epochs": [
+            {
+              "name": "Late Jurassic",
+              "start": 146,
+              "end": 163.5,
+              "desc": "Famous dinosaur groups thrived; the first birds appeared.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Carnotaurus_Reconstruction_(2022).png&width=320",
+              "imgCredit": "H. Raab — CC BY-SA 3.0",
+              "imgDesc": "Theropods (shown here), Sauropods and Thyreophorans emerged."
+            },
+            {
+              "name": "Middle Jurassic",
+              "start": 163.5,
+              "end": 174.7,
+              "desc": "Pangaea begins to split; mammals rapidly diversify.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Brachiosaurus_DB.jpg&width=320",
+              "imgCredit": "Dmitry Bogdanov — CC BY 3.0",
+              "imgDesc": "Brachiosaurs (shown here), Cetiosaurs, Megalosaurs and primitive Ornithopods emerged."
+            },
+            {
+              "name": "Early Jurassic",
+              "start": 174.7,
+              "end": 200,
+              "desc": "Dinosaurs diversify; marine reptiles and early mammals flourish.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ichthyosaurus_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Ammonites explosively diversified after near-extinction."
+            }
+          ]
+        },
+        {
+          "name": "Triassic",
+          "start": 200,
+          "end": 251,
+          "desc": "First mammals and dinosaurs emerge.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Plateosaurus_engelhardti.jpg&width=320",
+          "imgCredit": "Heinrich Harder, 1916 — Public domain",
+          "imgDesc": "Plateosaurus — early large herbivore",
+          "epochs": [
+            {
+              "name": "Late Triassic",
+              "start": 200,
+              "end": 228,
+              "desc": "First dinosaurs emerge; Triassic–Jurassic extinction event.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Herrerasaurus_ischigualastensis_Illustration.jpg&width=320",
+              "imgCredit": "Smokeybjb — CC BY-SA 3.0",
+              "imgDesc": "Herrerasaurus (shown here), Plateosaurus, Coelophysis, and Eoraptor emerged."
+            },
+            {
+              "name": "Middle Triassic",
+              "start": 228,
+              "end": 241.5,
+              "desc": "Marine reptiles diversify; Pangaea begins drifting.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Contectopalatus1DB.jpg&width=320",
+              "imgCredit": "Dmitry Bogdanov — CC BY 3.0",
+              "imgDesc": "Mixosaurus panxianensis — early ichthyosaur."
+            },
+            {
+              "name": "Early Triassic",
+              "start": 241.5,
+              "end": 251,
+              "desc": "Extinction recovery; first archosaurs, crocodile and dinosaur ancestors emerge.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Erythrosuchus_africanus.jpg&width=320",
+              "imgCredit": "Dmitry Bogdanov — CC BY 3.0",
+              "imgDesc": "Erythrosuchus — one of the first archosauriforms."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paleozoic",
+      "label": "Paleozoic",
+      "start": 251,
+      "end": 542,
+      "eon": "Phanerozoic",
+      "color": "#7bc4a8",
+      "colorLight": "#c8edd9",
+      "above": false,
+      "desc": "Explosion of complex life. Sea to land.",
+      "periods": [
+        {
+          "name": "Permian",
+          "start": 251,
+          "end": 299,
+          "desc": "Reptiles thrive; greatest mass extinction.",
+          "epochs": [
+            {
+              "name": "Lopingian",
+              "start": 251,
+              "end": 259.5,
+              "desc": "End-Permian extinction; ~96% of species lost.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Gorgonops_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Gorgonops — top predator before extinction"
+            },
+            {
+              "name": "Guadalupian",
+              "start": 259.5,
+              "end": 272.3,
+              "desc": "Therapsids dominate; two extinction events devastate life.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Titanophoneus_chart2_DB15.jpg&width=320",
+              "imgCredit": "Dmitry Bogdanov — CC BY 3.0",
+              "imgDesc": "Titanophoneus — top predator of the Guadalupian."
+            },
+            {
+              "name": "Cisuralian",
+              "start": 272.3,
+              "end": 299,
+              "desc": "Synapsids rule the land; beetles and flies appear.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dimetrodon_gigashomog_DB.jpg&width=320",
+              "imgCredit": "Dmitry Bogdanov — CC BY 3.0",
+              "imgDesc": "Dimetrodon — a pelycosaur, early reptile-like synapsid."
+            }
+          ]
+        },
+        {
+          "name": "Carboniferous",
+          "start": 299,
+          "end": 359,
+          "desc": "Coal swamp forests; giant insects.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Coal_forest_USA.jpg&width=320",
+          "imgCredit": "Mary Evans Picture Library — Public domain",
+          "imgDesc": "Carboniferous coal swamp forest",
+          "epochs": [
+            {
+              "name": "Pennsylvanian",
+              "start": 299,
+              "end": 323.2,
+              "desc": "Amniote egg evolves — tetrapods reproduce on land for the first time.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Chicken_egg_diagram.svg&width=320",
+              "imgCredit": "Wikimedia Commons — Public domain",
+              "imgDesc": "Anatomy of an amniotic egg — key innovation for land reproduction."
+            },
+            {
+              "name": "Mississippian",
+              "start": 323.2,
+              "end": 359,
+              "desc": "Almost the entire Northern Hemisphere flooded by shallow seas."
+            }
+          ]
+        },
+        {
+          "name": "Devonian",
+          "start": 359,
+          "end": 416,
+          "desc": "Age of fishes; first amphibians.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Devonian_sea.jpg&width=320",
+          "imgCredit": "Heinrich Harder, 1920 — Public domain",
+          "imgDesc": "Devonian ocean — Age of Fishes",
+          "epochs": [
+            {
+              "name": "Late Devonian",
+              "start": 359,
+              "end": 382.7,
+              "desc": "Tetrapods emerge on land; mass extinctions devastate marine life.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Tiktaalik_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Tiktaalik — first fish to walk on land"
+            },
+            {
+              "name": "Middle Devonian",
+              "start": 382.7,
+              "end": 393.3,
+              "desc": "First forests appear; jawed fish evolve lung-like adaptations.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Dunkleosteus_BW.jpg&width=320",
+              "imgCredit": "Nobu Tamura — CC BY 3.0",
+              "imgDesc": "Dunkleosteus — armoured apex predator"
+            },
+            {
+              "name": "Early Devonian",
+              "start": 393.3,
+              "end": 416,
+              "desc": "Land plants, arthropods, jawed fish and ammonoids appear.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Pleuroceras_solare,_Little_Switzerland,_Bavaria,_Germany.jpg&width=320",
+              "imgCredit": "Wikimedia Commons — CC BY-SA 3.0",
+              "imgDesc": "Pleuroceras solare — early Devonian ammonoid fossil."
+            }
+          ]
+        },
+        {
+          "name": "Silurian",
+          "start": 416,
+          "end": 444,
+          "desc": "Warm seas, reefs; first land plants.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Eurypterus_remipes.jpg&width=320",
+          "imgCredit": "Heinrich Harder, 1916 — Public domain",
+          "imgDesc": "Eurypterus — Silurian sea scorpion",
+          "epochs": [
+            {
+              "name": "Pridoli",
+              "start": 416,
+              "end": 419.2,
+              "desc": "Terrestrial ecosystems expand with plants and arthropods.",
+              "imgCredit": "Muséum national d'Histoire naturelle — CC BY 3.0"
+            },
+            {
+              "name": "Ludlow",
+              "start": 419.2,
+              "end": 423,
+              "desc": "Coral reefs expand; marine and land plant life diversifies."
+            },
+            {
+              "name": "Wenlock",
+              "start": 423,
+              "end": 430.5,
+              "desc": "Marine life recovers; coral reef systems flourish.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Diorama_of_a_Silurian_seafloor_-_cephalopod,_trilobites,_fish,_crinoids,_gastropods,_corals,_algae,_starfish,_brachiopods,_bryozoans_(44982225194).jpg&width=320",
+              "imgCredit": "Wikimedia Commons — CC BY 2.0",
+              "imgDesc": "Silurian seafloor — cephalopods, trilobites, crinoids and corals."
+            },
+            {
+              "name": "Llandovery",
+              "start": 430.5,
+              "end": 444,
+              "desc": "Life recovers after extinction; seas rise and reef growth resumes."
+            }
+          ]
+        },
+        {
+          "name": "Ordovician",
+          "start": 444,
+          "end": 488,
+          "desc": "Complex marine life; mass extinction.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Ordovician_sea.jpg&width=320",
+          "imgCredit": "Heinrich Harder, 1920 — Public domain",
+          "imgDesc": "Ordovician marine life",
+          "epochs": [
+            {
+              "name": "Late Ordovician",
+              "start": 444,
+              "end": 458.4,
+              "desc": "Global glaciation triggers the massive Ordovician–Silurian mass extinction."
+            },
+            {
+              "name": "Middle Ordovician",
+              "start": 458.4,
+              "end": 470,
+              "desc": "Seas flood continents; intense volcanism and tectonic activity."
+            },
+            {
+              "name": "Early Ordovician",
+              "start": 470,
+              "end": 488,
+              "desc": "Great Biodiversification Event; marine life explodes in diversity."
+            }
+          ]
+        },
+        {
+          "name": "Cambrian",
+          "start": 488,
+          "end": 542,
+          "desc": "Marine animals with hard shells appear.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Anomalocaris_canadensis.jpg&width=320",
+          "imgCredit": "Heinrich Harder, 1920 — Public domain",
+          "imgDesc": "Anomalocaris — Cambrian apex predator",
+          "epochs": [
+            {
+              "name": "Furongian",
+              "start": 488,
+              "end": 497,
+              "desc": "Trilobites diversify then collapse; Cambrian life ends."
+            },
+            {
+              "name": "Miaolingian",
+              "start": 497,
+              "end": 509,
+              "desc": "Major trilobite extinctions; new species emerge after."
+            },
+            {
+              "name": "Series 2",
+              "start": 509,
+              "end": 521,
+              "desc": "First trilobites appear; early Cambrian extinction event follows."
+            },
+            {
+              "name": "Terreneuvian",
+              "start": 521,
+              "end": 542,
+              "desc": "Cambrian explosion begins; complex animal groups emerge.",
+              "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Life_on_the_platform_margin_of_the_Miaolingian_sea,_North_China.png&width=320",
+              "imgCredit": "Wikimedia Commons — CC BY-SA 4.0",
+              "imgDesc": "Cambrian explosion — first complex animal groups emerge."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "neoproterozoic",
+      "label": "Neoproterozoic",
+      "start": 542,
+      "end": 1000,
+      "eon": "Proterozoic",
+      "desc": "Snowball Earth; first multicellular animals.",
+      "color": "#89bdd3",
+      "colorLight": "#c8e4f0",
+      "above": true,
+      "periods": [
+        {
+          "name": "Ediacaran",
+          "start": 542,
+          "end": 635,
+          "desc": "First complex soft-bodied multicellular animals appear.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=DickinsoniaCostata.jpg&width=320",
+          "imgCredit": "Wikimedia Commons — CC BY-SA 3.0",
+          "imgDesc": "Dickinsonia costata — iconic Ediacaran organism."
+        },
+        {
+          "name": "Cryogenian",
+          "start": 635,
+          "end": 720,
+          "desc": "Earth freezes over in Snowball Earth events.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Mollweide_Paleographic_Map_of_Earth,_690_Ma_(Cryogenian_Period).png&width=320",
+          "imgCredit": "Wikimedia Commons — CC BY-SA 4.0",
+          "imgDesc": "Paleogeographic map of Earth at 690 Ma — Snowball Earth."
+        },
+        {
+          "name": "Tonian",
+          "start": 720,
+          "end": 1000,
+          "desc": "Supercontinent Rodinia breaks apart; crust stretches and rifts."
+        }
+      ]
+    },
+    {
+      "id": "mesoproterozoic",
+      "label": "Mesoproterozoic",
+      "start": 1000,
+      "end": 1600,
+      "eon": "Proterozoic",
+      "desc": "Supercontinent Rodinia; sexual reproduction.",
+      "color": "#f4a7b9",
+      "colorLight": "#fad4de",
+      "above": false,
+      "periods": [
+        {
+          "name": "Stenian",
+          "start": 1000,
+          "end": 1200,
+          "desc": "Mountains form widely; supercontinent Rodinia coming together."
+        },
+        {
+          "name": "Ectasian",
+          "start": 1200,
+          "end": 1400,
+          "desc": "Continental platforms expand; tectonic rifting begins worldwide."
+        },
+        {
+          "name": "Calymmian",
+          "start": 1400,
+          "end": 1600,
+          "desc": "Supercontinent Columbia begins breaking apart."
+        }
+      ]
+    },
+    {
+      "id": "paleoproterozoic",
+      "label": "Paleoproterozoic",
+      "start": 1600,
+      "end": 2500,
+      "eon": "Proterozoic",
+      "desc": "Great Oxidation Event; eukaryotes appear.",
+      "color": "#f5b97f",
+      "colorLight": "#fad9b8",
+      "above": true,
+      "periods": [
+        {
+          "name": "Statherian",
+          "start": 1600,
+          "end": 1800,
+          "desc": "Continents stabilize into cratons; first nucleated cells appear."
+        },
+        {
+          "name": "Orosirian",
+          "start": 1800,
+          "end": 2050,
+          "desc": "Intense mountain-building shapes nearly every continent.",
+          "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Vredefort_Dome_STS51I-33-56AA.jpg&width=320",
+          "imgCredit": "NASA — Public domain",
+          "imgDesc": "Vredefort Dome — largest verified impact crater on Earth."
+        },
+        {
+          "name": "Rhyacian",
+          "start": 2050,
+          "end": 2300,
+          "desc": "Widespread volcanic activity floods Earth's surface with lava."
+        },
+        {
+          "name": "Siderian",
+          "start": 2300,
+          "end": 2500,
+          "desc": "Great Oxidation Event triggers first global glaciation."
+        }
+      ]
+    },
+    {
+      "id": "neoarchean",
+      "label": "Neoarchean",
+      "start": 2500,
+      "end": 2800,
+      "eon": "Archean",
+      "above": false,
+      "color": "#8a8a8a",
+      "colorLight": "#d0d0d0",
+      "desc": "Cyanobacteria begin producing oxygen."
+    },
+    {
+      "id": "mesoarchean",
+      "label": "Mesoarchean",
+      "start": 2800,
+      "end": 3200,
+      "eon": "Archean",
+      "above": true,
+      "color": "#b0b0b0",
+      "colorLight": "#e4e4e4",
+      "desc": "Earliest stromatolite reefs."
+    },
+    {
+      "id": "paleoarchean",
+      "label": "Paleoarchean",
+      "start": 3200,
+      "end": 3600,
+      "eon": "Archean",
+      "above": false,
+      "color": "#8a8a8a",
+      "colorLight": "#d0d0d0",
+      "desc": "Oldest confirmed microbial fossils."
+    },
+    {
+      "id": "eoarchean",
+      "label": "Eoarchean",
+      "start": 3600,
+      "end": 4000,
+      "eon": "Archean",
+      "above": true,
+      "color": "#b0b0b0",
+      "colorLight": "#e4e4e4",
+      "desc": "First stable continental crust.",
+      "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Acasta_Gneiss.jpg&width=320",
+      "imgCredit": "Mike Beauregard — CC BY 2.0",
+      "imgDesc": "Acasta Gneiss — oldest exposed continental crust"
+    },
+    {
+      "id": "latehadean",
+      "label": "Late Hadean",
+      "start": 4000,
+      "end": 4150,
+      "eon": "Hadean",
+      "above": false,
+      "color": "#8a8a8a",
+      "colorLight": "#d0d0d0",
+      "desc": "Late Heavy Bombardment; possible prebiotic chemistry.",
+      "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Vredefort_crater_LANDSAT.jpg&width=320",
+      "imgCredit": "NASA — Public domain",
+      "imgDesc": "Vredefort crater — largest known impact site"
+    },
+    {
+      "id": "earlyhadean",
+      "label": "Early Hadean",
+      "start": 4150,
+      "end": 4570,
+      "eon": "Hadean",
+      "above": true,
+      "color": "#b0b0b0",
+      "colorLight": "#e4e4e4",
+      "desc": "Earth accretes; Moon-forming impact.",
+      "img": "https://commons.wikimedia.org/w/index.php?title=Special:FilePath&file=Giant_Impact_Hypothesis.jpg&width=320",
+      "imgCredit": "NASA/JPL-Caltech — Public domain",
+      "imgDesc": "Giant impact — Moon-forming collision"
+    }
+  ]
+}
