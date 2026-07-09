@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Life Through Time — Map</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -32,7 +32,14 @@
       linear-gradient(90deg, rgba(128,120,100,0.06) 1px, transparent 1px);
     background-size: 32px 32px; pointer-events: none; z-index: 0;
   }
-  .page { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+  .page {
+    position: relative; z-index: 1; display: flex; flex-direction: column;
+    /* dvh accounts for mobile browser toolbars/nav bars that vh ignores —
+       without it the bottom of the page (the scrub timeline) ends up
+       hidden behind them. Fall back to vh for browsers without dvh support. */
+    height: 100vh;
+    height: 100dvh;
+  }
 
   /* ── Header ── */
   header {
@@ -136,7 +143,7 @@
   #stage.no-map #map-wrap { display: none; }
   #stage.no-map #info-panel { flex: 1 1 auto; width: 100%; }
   #stage.no-map #info-content.has-image {
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1fr 350px;
     grid-template-areas: "desc creature" "eradesc creature" "mapcredit creature";
   }
   #stage.no-map #info-content:not(.has-image) {
@@ -272,7 +279,9 @@
       grid-template-columns: 1fr !important;
       grid-template-areas: "desc" "eradesc" "creature" "mapcredit" !important;
     }
-    #scrub-wrap { padding: 8px 10px 16px; }
+    /* Extra bottom padding clears the home-indicator / gesture-nav bar area
+       on devices that report a safe-area inset (falls back to 16px otherwise). */
+    #scrub-wrap { padding: 8px 10px calc(16px + env(safe-area-inset-bottom, 0px)); }
     /* Let a swipe on the track natively pan the (often much wider than the
        screen) timeline, instead of being eaten by the drag-to-scrub handler. */
     #scrub-track { touch-action: pan-x; }
