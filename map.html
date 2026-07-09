@@ -170,7 +170,7 @@
   #info-era-desc-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block; margin-bottom: 4px; color: var(--ink3); }
   #info-creature { grid-area: creature; display: none; }
   #info-creature img {
-    width: 100%; display: block; border: 1.5px solid var(--border);
+    width: 100%; max-width: 350px; display: block; border: 1.5px solid var(--border);
   }
   #info-creature-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
   #info-credit-illustration { font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.4; margin-top: 6px; }
@@ -182,6 +182,26 @@
 
   /* ── Scrub track ── */
   #scrub-wrap { flex-shrink: 0; padding: 10px 24px 22px; }
+  #scrub-row { display: flex; align-items: stretch; gap: 6px; }
+  /* Hidden on desktop — mobile-only prev/next period buttons and center pointer. */
+  .tl-nav-btn {
+    display: none; flex-shrink: 0; width: 36px; border-radius: 10px;
+    border: 1.5px solid rgba(128,120,100,0.3); background: var(--card-bg); color: var(--ink2);
+    align-items: center; justify-content: center; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  .tl-nav-btn:active { background: rgba(128,120,100,0.15); }
+  .tl-nav-btn svg { width: 18px; height: 18px; }
+  #timeline-viewport { position: relative; flex: 1 1 auto; min-width: 0; }
+  #timeline-pointer {
+    display: none; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+    background: var(--ink); opacity: 0.5; pointer-events: none; z-index: 5; transform: translateX(-50%);
+  }
+  #timeline-pointer::before {
+    content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+    border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--ink);
+    opacity: 0.9;
+  }
   /* Every segment below is sized in JS from its own measured text width, so
      no era/period label can ever be truncated or collide with its neighbor.
      That means the full track can exceed the viewport — it scrolls. */
@@ -190,6 +210,7 @@
   }
   #timeline-scroll::-webkit-scrollbar { height: 5px; }
   #timeline-scroll::-webkit-scrollbar-thumb { background: rgba(128,120,100,0.3); border-radius: 3px; }
+  #timeline-content { width: max-content; }
   #era-groups { display: flex; height: 15px; margin-bottom: 2px; width: max-content; }
   .era-group {
     display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box;
@@ -256,6 +277,8 @@
        screen) timeline, instead of being eaten by the drag-to-scrub handler. */
     #scrub-track { touch-action: pan-x; }
     #hint { display: none; }
+    .tl-nav-btn { display: flex; }
+    #timeline-pointer { display: block; }
   }
 </style>
 </head>
@@ -310,12 +333,25 @@
   </div>
 
   <div id="scrub-wrap">
-    <div id="timeline-scroll">
-      <div id="era-groups"></div>
-      <div id="period-groups"></div>
-      <div id="scrub-track">
-        <div id="scrub-current-ma"></div>
+    <div id="scrub-row">
+      <button id="tl-prev" class="tl-nav-btn" type="button" aria-label="Previous period">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div id="timeline-viewport">
+        <div id="timeline-scroll">
+          <div id="timeline-content">
+            <div id="era-groups"></div>
+            <div id="period-groups"></div>
+            <div id="scrub-track">
+              <div id="scrub-current-ma"></div>
+            </div>
+          </div>
+        </div>
+        <div id="timeline-pointer"></div>
       </div>
+      <button id="tl-next" class="tl-nav-btn" type="button" aria-label="Next period">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
     <div id="hint">Drag, click, or use &larr; &rarr; to scrub through time</div>
   </div>
@@ -484,11 +520,17 @@ let periods = [];
 let frames = [];
 let frameWidths = [];  // px width per frame, sized so no label is ever cut off
 let frameOffsets = []; // cumulative left-edge px per frame, length frames.length+1
+let periodStartIndices = []; // frame index each period-group begins at, in order
+let mobilePad = 0; // current left/right padding on #timeline-content (mobile centering)
 let currentIndex = 0;
 const stageEl = document.getElementById('stage');
 const mapImg = document.getElementById('map-img');
 const mapLoading = document.getElementById('map-loading');
+const timelineViewport = document.getElementById('timeline-viewport');
 const timelineScroll = document.getElementById('timeline-scroll');
+const timelineContent = document.getElementById('timeline-content');
+const tlPrevBtn = document.getElementById('tl-prev');
+const tlNextBtn = document.getElementById('tl-next');
 const scrubTrack = document.getElementById('scrub-track');
 const eraGroupsEl = document.getElementById('era-groups');
 const periodGroupsEl = document.getElementById('period-groups');
@@ -576,7 +618,9 @@ function buildEraGroups() {
 
 function buildPeriodGroups() {
   periodGroupsEl.innerHTML = '';
+  periodStartIndices = [];
   for (const run of runsOf(f => f.period)) {
+    periodStartIndices.push(run.start);
     const period = frames[run.start].period;
     const width = frameWidths.slice(run.start, run.start + run.span).reduce((a, b) => a + b, 0);
     const div = document.createElement('div');
@@ -586,7 +630,7 @@ function buildPeriodGroups() {
     // Era-only entries already show their name in the era-groups row above —
     // don't repeat it here, just leave the segment blank.
     div.textContent = period.eraOnly ? '' : period.name;
-    div.addEventListener('click', () => renderFrame(run.start));
+    div.addEventListener('click', () => activateFrame(run.start, true));
     periodGroupsEl.appendChild(div);
   }
 }
@@ -699,17 +743,21 @@ function positionPlayhead() {
 }
 
 // ── Scrub interaction ─────────────────────────────────────────────
-// Frames have unequal widths (each sized to fit its label), so pointer
-// position maps to a frame via the cumulative offsets, not a plain ratio.
-function indexFromPointerX(clientX) {
-  const rect = scrubTrack.getBoundingClientRect();
-  const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+// Frames have unequal widths (each sized to fit its label), so an x position
+// maps to a frame via the cumulative offsets, not a plain ratio.
+function frameIndexAtOffset(x) {
+  const total = frameOffsets[frameOffsets.length - 1];
+  const clamped = Math.max(0, Math.min(total, x));
   let lo = 0, hi = frames.length - 1;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (frameOffsets[mid + 1] <= x) lo = mid + 1; else hi = mid;
+    if (frameOffsets[mid + 1] <= clamped) lo = mid + 1; else hi = mid;
   }
   return lo;
+}
+function indexFromPointerX(clientX) {
+  const rect = scrubTrack.getBoundingClientRect();
+  return frameIndexAtOffset(clientX - rect.left);
 }
 
 // Keyboard/click navigation can jump beyond the visible scroll area — nudge
@@ -720,11 +768,89 @@ function scrollFrameIntoView(idx) {
   tick.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 }
 
+const mobileMedia = window.matchMedia('(max-width: 900px)');
+function isMobileLayout() { return mobileMedia.matches; }
+
+// Mobile: pad both ends of the track by half a viewport so the first/last
+// frame can be scrolled all the way to the fixed center pointer.
+function applyMobileCentering() {
+  mobilePad = isMobileLayout() ? timelineViewport.clientWidth / 2 : 0;
+  timelineContent.style.paddingLeft = mobilePad + 'px';
+  timelineContent.style.paddingRight = mobilePad + 'px';
+}
+
+// Scrolls so frame `idx` sits exactly under the fixed center pointer.
+function centerFrameUnderPointer(idx, smooth) {
+  const center = (frameOffsets[idx] + frameOffsets[idx + 1]) / 2;
+  const target = center - timelineViewport.clientWidth / 2 + mobilePad;
+  timelineScroll.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+// Renders a frame and, if requested, brings it into view — centered under
+// the pointer on mobile, or just scrolled into view on desktop.
+function activateFrame(idx, alsoScroll) {
+  renderFrame(idx);
+  if (!alsoScroll) return;
+  if (isMobileLayout()) centerFrameUnderPointer(currentIndex, true);
+  else scrollFrameIntoView(currentIndex);
+}
+
+// Mobile: whichever frame sits under the fixed center pointer becomes active
+// as the user swipes/scrolls the track — no tap needed.
+let scrollRaf = null;
+function onTimelineScroll() {
+  if (!isMobileLayout()) return;
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = null;
+    const contentX = timelineScroll.scrollLeft - mobilePad + timelineViewport.clientWidth / 2;
+    const idx = frameIndexAtOffset(contentX);
+    if (idx !== currentIndex) renderFrame(idx);
+  });
+}
+timelineScroll.addEventListener('scroll', onTimelineScroll, { passive: true });
+
+// Mobile prev/next buttons jump by whole period, not by sub-stage frame.
+function currentPeriodPos() {
+  let pos = 0;
+  for (let i = 0; i < periodStartIndices.length; i++) {
+    if (periodStartIndices[i] <= currentIndex) pos = i; else break;
+  }
+  return pos;
+}
+function goToAdjacentPeriod(delta) {
+  const pos = currentPeriodPos();
+  const newPos = Math.max(0, Math.min(periodStartIndices.length - 1, pos + delta));
+  activateFrame(periodStartIndices[newPos], true);
+}
+// Tap = one period; press-and-hold = repeat quickly until released.
+function setupHoldRepeat(el, delta) {
+  let repeatTimeout = null, repeatInterval = null;
+  const step = () => goToAdjacentPeriod(delta);
+  const start = e => {
+    e.preventDefault();
+    step();
+    repeatTimeout = setTimeout(() => { repeatInterval = setInterval(step, 180); }, 450);
+  };
+  const stop = () => {
+    clearTimeout(repeatTimeout); clearInterval(repeatInterval);
+    repeatTimeout = null; repeatInterval = null;
+  };
+  el.addEventListener('pointerdown', start);
+  el.addEventListener('pointerup', stop);
+  el.addEventListener('pointerleave', stop);
+  el.addEventListener('pointercancel', stop);
+}
+setupHoldRepeat(tlPrevBtn, -1);
+setupHoldRepeat(tlNextBtn, 1);
+
 let dragging = false;
 scrubTrack.addEventListener('pointerdown', e => {
   dragging = true;
   scrubTrack.setPointerCapture(e.pointerId);
-  renderFrame(indexFromPointerX(e.clientX));
+  const idx = indexFromPointerX(e.clientX);
+  renderFrame(idx);
+  if (isMobileLayout()) centerFrameUnderPointer(idx, true);
 });
 scrubTrack.addEventListener('pointermove', e => {
   if (!dragging) return;
@@ -734,13 +860,23 @@ scrubTrack.addEventListener('pointerup', () => { dragging = false; });
 scrubTrack.addEventListener('pointercancel', () => { dragging = false; });
 
 window.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') { renderFrame(currentIndex + 1); scrollFrameIntoView(currentIndex); e.preventDefault(); }
-  else if (e.key === 'ArrowLeft') { renderFrame(currentIndex - 1); scrollFrameIntoView(currentIndex); e.preventDefault(); }
-  else if (e.key === 'Home') { renderFrame(0); scrollFrameIntoView(0); e.preventDefault(); }
-  else if (e.key === 'End') { renderFrame(frames.length - 1); scrollFrameIntoView(frames.length - 1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { activateFrame(currentIndex + 1, true); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { activateFrame(currentIndex - 1, true); e.preventDefault(); }
+  else if (e.key === 'Home') { activateFrame(0, true); e.preventDefault(); }
+  else if (e.key === 'End') { activateFrame(frames.length - 1, true); e.preventDefault(); }
 });
 
-window.addEventListener('resize', positionPlayhead);
+let resizeRaf = null;
+function handleViewportChange() {
+  positionPlayhead();
+  if (resizeRaf) cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(() => {
+    applyMobileCentering();
+    if (isMobileLayout()) centerFrameUnderPointer(currentIndex, false);
+  });
+}
+window.addEventListener('resize', handleViewportChange);
+mobileMedia.addEventListener('change', handleViewportChange);
 
 // ── Theme toggle ──────────────────────────────────────────────────
 function toggleTheme() {
@@ -757,6 +893,7 @@ async function init() {
   buildEraGroups();
   buildPeriodGroups();
   buildTicks();
+  applyMobileCentering();
   renderFrame(0);
 }
 init().catch(err => {
