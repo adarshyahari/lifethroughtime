@@ -1,69 +1,32 @@
-# Timeline content data
+# Timeline content
 
-The app loads **`timeline-data.json`** at startup. Edit that file (or the CSV sheet) to change timeline content.
+Edit **`timeline-data.csv`** to change timeline text, dates, colors, and images. The app loads this file on startup.
 
-## Files
-
-| File | Role |
-|------|------|
-| `timeline-data.json` | **Source of truth** — loaded by `index.html` |
-| `timeline-data.csv` | Spreadsheet-friendly export for bulk editing |
-
-After editing the JSON by hand, no build step is needed — refresh the browser.
-
-To regenerate CSV from JSON:
-
-```bash
-node scripts/export-timeline-data.mjs
-```
-
-## JSON shape
-
-```json
-{
-  "eras": [
-    {
-      "id": "cenozoic",
-      "label": "Cenozoic",
-      "start": 0,
-      "end": 66,
-      "eon": "Phanerozoic",
-      "desc": "...",
-      "color": "#e8b96a",
-      "colorLight": "#f7e4bb",
-      "above": false,
-      "periods": [
-        {
-          "name": "Quaternary",
-          "start": 0,
-          "end": 2.6,
-          "desc": "...",
-          "epochs": [
-            { "name": "Holocene", "start": 0, "end": 0.012, "desc": "..." }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-Eras without periods omit the `periods` field. Periods without epochs omit `epochs`. Optional fields: `img`, `imgCredit`, `imgDesc`, `above`.
-
-Dates are **millions of years ago** (0 = present).
-
-## CSV columns
-
-Each row is one epoch (or one period/era when no child levels exist). See column headers in `timeline-data.csv`. Era and period fields repeat on each row for easy sheet editing.
-
-## Import in the app
-
-**Import** in the header loads a `.csv` or `.json` into memory for the current session. To persist changes, save back to `data/timeline-data.json`.
-
-Serve the project over HTTP so the JSON file can load:
+Serve the project over HTTP (CSV fetch does not work on `file://`):
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://localhost:8080` and refresh after saving CSV changes.
+
+## CSV columns
+
+Each row is one **epoch**. Periods without epochs get one row with empty epoch columns. Eras without periods get one row with empty period and epoch columns.
+
+| Column | Level | Notes |
+|--------|-------|-------|
+| `era_id` | Era | Stable ID (e.g. `cenozoic`) — keep unchanged unless adding a new era |
+| `era_label` | Era | Display name |
+| `era_start`, `era_end` | Era | Millions of years ago |
+| `era_eon` | Era | e.g. Phanerozoic |
+| `era_desc` | Era | Card description |
+| `era_color`, `era_colorLight` | Era | Hex colors |
+| `era_above` | Era | `true` / `false` / blank (auto-alternate card position) |
+| `era_img`, `era_imgCredit`, `era_imgDesc` | Era | Optional hover image |
+| `period_*` | Period | Same pattern |
+| `epoch_*` | Epoch | Same pattern |
+
+Era and period fields repeat on every row so the sheet is easy to filter and edit in Google Sheets or Excel.
+
+Dates are in **millions of years ago** (0 = present). Leave optional fields blank; do not delete columns.

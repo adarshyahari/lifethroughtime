@@ -79,14 +79,6 @@
   }
   #theme-toggle-label { display: none; }
 
-  #data-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .data-btn {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--ink3); background: none; border: 1px solid rgba(128,120,100,0.25);
-    border-radius: 4px; padding: 5px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
-  }
-  .data-btn:hover { color: var(--ink); border-color: rgba(128,120,100,0.45); }
-
   header {
     padding: 26px 60px 16px;
     border-bottom: 1px solid rgba(128,120,100,0.15);
@@ -563,10 +555,6 @@
   <header>
     <h1>Life <em>Through</em> Time</h1>
     <nav id="header-nav" aria-label="Timeline navigation"></nav>
-    <div id="data-controls">
-      <button type="button" id="export-data-btn" class="data-btn">Export CSV</button>
-      <label class="data-btn" id="import-data-label">Import<input type="file" id="import-data-input" accept=".csv,.json,text/csv,application/json" hidden></label>
-    </div>
     <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
       <span class="toggle-sun">☀</span>
       <span class="toggle-knob"></span>
@@ -1221,14 +1209,124 @@ function updateNavigation() {
 }
 
 let eras = [];
-const TIMELINE_DATA_URL = 'data/timeline-data.json';
+const TIMELINE_DATA_URL = 'data/timeline-data.csv';
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let i = 0;
+  let inQuotes = false;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { inQuotes = true; i++; continue; }
+    if (c === ',') { row.push(field); field = ''; i++; continue; }
+    if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.some(v => v !== '')) rows.push(row);
+      row = []; i++; continue;
+    }
+    field += c; i++;
+  }
+  row.push(field);
+  if (row.some(v => v !== '')) rows.push(row);
+  if (!rows.length) return [];
+  const headers = rows.shift();
+  return rows.map(r => Object.fromEntries(headers.map((h, j) => [h.trim(), r[j] ?? ''])));
+}
+
+function dataStr(v) {
+  const s = (v ?? '').trim();
+  return s || undefined;
+}
+
+function dataNum(v) {
+  if (v === '' || v === null || v === undefined) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function dataBool(v) {
+  if (v === '' || v === null || v === undefined) return undefined;
+  if (v === true || v === 'true') return true;
+  if (v === false || v === 'false') return false;
+  return undefined;
+}
+
+function eraFromRow(row) {
+  const era = {
+    id: dataStr(row.era_id),
+    label: dataStr(row.era_label),
+    start: dataNum(row.era_start),
+    end: dataNum(row.era_end),
+  };
+  if (dataStr(row.era_eon)) era.eon = dataStr(row.era_eon);
+  if (dataStr(row.era_desc)) era.desc = dataStr(row.era_desc);
+  if (dataStr(row.era_color)) era.color = dataStr(row.era_color);
+  if (dataStr(row.era_colorLight)) era.colorLight = dataStr(row.era_colorLight);
+  const above = dataBool(row.era_above);
+  if (above !== undefined) era.above = above;
+  if (dataStr(row.era_img)) era.img = dataStr(row.era_img);
+  if (dataStr(row.era_imgCredit)) era.imgCredit = dataStr(row.era_imgCredit);
+  if (dataStr(row.era_imgDesc)) era.imgDesc = dataStr(row.era_imgDesc);
+  return era;
+}
+
+function rowsToEras(rows) {
+  const order = [];
+  const eraMap = new Map();
+  for (const row of rows) {
+    const id = dataStr(row.era_id);
+    if (!id) continue;
+    if (!eraMap.has(id)) {
+      eraMap.set(id, { ...eraFromRow(row), periods: [] });
+      order.push(id);
+    }
+    const era = eraMap.get(id);
+    const periodName = dataStr(row.period_name);
+    if (!periodName) continue;
+    let period = era.periods.find(p => p.name === periodName);
+    if (!period) {
+      period = { name: periodName, start: dataNum(row.period_start), end: dataNum(row.period_end) };
+      if (dataStr(row.period_desc)) period.desc = dataStr(row.period_desc);
+      if (dataStr(row.period_img)) period.img = dataStr(row.period_img);
+      if (dataStr(row.period_imgCredit)) period.imgCredit = dataStr(row.period_imgCredit);
+      if (dataStr(row.period_imgDesc)) period.imgDesc = dataStr(row.period_imgDesc);
+      era.periods.push(period);
+    }
+    const epochName = dataStr(row.epoch_name);
+    if (!epochName) continue;
+    period.epochs = period.epochs || [];
+    if (!period.epochs.some(e => e.name === epochName)) {
+      const epoch = { name: epochName, start: dataNum(row.epoch_start), end: dataNum(row.epoch_end) };
+      if (dataStr(row.epoch_desc)) epoch.desc = dataStr(row.epoch_desc);
+      if (dataStr(row.epoch_img)) epoch.img = dataStr(row.epoch_img);
+      if (dataStr(row.epoch_imgCredit)) epoch.imgCredit = dataStr(row.epoch_imgCredit);
+      if (dataStr(row.epoch_imgDesc)) epoch.imgDesc = dataStr(row.epoch_imgDesc);
+      period.epochs.push(epoch);
+    }
+  }
+  return order.map(id => {
+    const era = eraMap.get(id);
+    if (!era.periods.length) delete era.periods;
+    else era.periods.forEach(p => { if (p.epochs && !p.epochs.length) delete p.epochs; });
+    return era;
+  });
+}
 
 async function loadTimelineData() {
   const res = await fetch(TIMELINE_DATA_URL);
   if (!res.ok) throw new Error('Failed to load ' + TIMELINE_DATA_URL + ' (' + res.status + ')');
-  const data = await res.json();
-  const list = Array.isArray(data) ? data : data.eras;
-  if (!Array.isArray(list) || !list.length) throw new Error('Timeline data is empty');
+  const list = rowsToEras(parseCSV(await res.text()));
+  if (!list.length) throw new Error('Timeline data is empty');
   eras.length = 0;
   eras.push(...list);
 }
@@ -1604,214 +1702,6 @@ function buildViewForMode(mode, opts = {}) {
 
   updateNavigation();
   if (!opts.preserveScroll) viewport.scrollLeft = 0;
-}
-
-const DATA_COLS = [
-  'era_id', 'era_label', 'era_start', 'era_end', 'era_eon', 'era_desc', 'era_color', 'era_colorLight', 'era_above',
-  'era_img', 'era_imgCredit', 'era_imgDesc',
-  'period_name', 'period_start', 'period_end', 'period_desc',
-  'period_img', 'period_imgCredit', 'period_imgDesc',
-  'epoch_name', 'epoch_start', 'epoch_end', 'epoch_desc',
-  'epoch_img', 'epoch_imgCredit', 'epoch_imgDesc',
-];
-
-function csvCell(v) {
-  if (v === undefined || v === null) return '';
-  const s = String(v);
-  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-  return s;
-}
-
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = '';
-  let i = 0;
-  let inQuotes = false;
-  while (i < text.length) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
-        inQuotes = false; i++; continue;
-      }
-      field += c; i++; continue;
-    }
-    if (c === '"') { inQuotes = true; i++; continue; }
-    if (c === ',') { row.push(field); field = ''; i++; continue; }
-    if (c === '\n' || c === '\r') {
-      if (c === '\r' && text[i + 1] === '\n') i++;
-      row.push(field); field = '';
-      if (row.some(v => v !== '')) rows.push(row);
-      row = []; i++; continue;
-    }
-    field += c; i++;
-  }
-  row.push(field);
-  if (row.some(v => v !== '')) rows.push(row);
-  if (!rows.length) return [];
-  const headers = rows.shift();
-  return rows.map(r => Object.fromEntries(headers.map((h, j) => [h.trim(), r[j] ?? ''])));
-}
-
-function dataStr(v) {
-  const s = (v ?? '').trim();
-  return s || undefined;
-}
-
-function dataNum(v) {
-  if (v === '' || v === null || v === undefined) return undefined;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-function dataBool(v) {
-  if (v === '' || v === null || v === undefined) return undefined;
-  if (v === true || v === 'true') return true;
-  if (v === false || v === 'false') return false;
-  return undefined;
-}
-
-function eraFromRow(row) {
-  const era = {
-    id: dataStr(row.era_id),
-    label: dataStr(row.era_label),
-    start: dataNum(row.era_start),
-    end: dataNum(row.era_end),
-  };
-  if (dataStr(row.era_eon)) era.eon = dataStr(row.era_eon);
-  if (dataStr(row.era_desc)) era.desc = dataStr(row.era_desc);
-  if (dataStr(row.era_color)) era.color = dataStr(row.era_color);
-  if (dataStr(row.era_colorLight)) era.colorLight = dataStr(row.era_colorLight);
-  const above = dataBool(row.era_above);
-  if (above !== undefined) era.above = above;
-  if (dataStr(row.era_img)) era.img = dataStr(row.era_img);
-  if (dataStr(row.era_imgCredit)) era.imgCredit = dataStr(row.era_imgCredit);
-  if (dataStr(row.era_imgDesc)) era.imgDesc = dataStr(row.era_imgDesc);
-  return era;
-}
-
-function rowsToEras(rows) {
-  const order = [];
-  const eraMap = new Map();
-  for (const row of rows) {
-    const id = dataStr(row.era_id);
-    if (!id) continue;
-    if (!eraMap.has(id)) {
-      eraMap.set(id, { ...eraFromRow(row), periods: [] });
-      order.push(id);
-    }
-    const era = eraMap.get(id);
-    const periodName = dataStr(row.period_name);
-    if (!periodName) continue;
-    let period = era.periods.find(p => p.name === periodName);
-    if (!period) {
-      period = { name: periodName, start: dataNum(row.period_start), end: dataNum(row.period_end) };
-      if (dataStr(row.period_desc)) period.desc = dataStr(row.period_desc);
-      if (dataStr(row.period_img)) period.img = dataStr(row.period_img);
-      if (dataStr(row.period_imgCredit)) period.imgCredit = dataStr(row.period_imgCredit);
-      if (dataStr(row.period_imgDesc)) period.imgDesc = dataStr(row.period_imgDesc);
-      era.periods.push(period);
-    }
-    const epochName = dataStr(row.epoch_name);
-    if (!epochName) continue;
-    period.epochs = period.epochs || [];
-    if (!period.epochs.some(e => e.name === epochName)) {
-      const epoch = { name: epochName, start: dataNum(row.epoch_start), end: dataNum(row.epoch_end) };
-      if (dataStr(row.epoch_desc)) epoch.desc = dataStr(row.epoch_desc);
-      if (dataStr(row.epoch_img)) epoch.img = dataStr(row.epoch_img);
-      if (dataStr(row.epoch_imgCredit)) epoch.imgCredit = dataStr(row.epoch_imgCredit);
-      if (dataStr(row.epoch_imgDesc)) epoch.imgDesc = dataStr(row.epoch_imgDesc);
-      period.epochs.push(epoch);
-    }
-  }
-  return order.map(id => {
-    const era = eraMap.get(id);
-    if (!era.periods.length) delete era.periods;
-    else era.periods.forEach(p => { if (p.epochs && !p.epochs.length) delete p.epochs; });
-    return era;
-  });
-}
-
-function flattenErasToRows() {
-  const rows = [];
-  for (const era of eras) {
-    const ef = {
-      era_id: era.id ?? '', era_label: era.label ?? '', era_start: era.start ?? '', era_end: era.end ?? '',
-      era_eon: era.eon ?? '', era_desc: era.desc ?? '', era_color: era.color ?? '', era_colorLight: era.colorLight ?? '',
-      era_above: era.above === undefined ? '' : era.above, era_img: era.img ?? '', era_imgCredit: era.imgCredit ?? '',
-      era_imgDesc: era.imgDesc ?? '',
-    };
-    const periods = Array.isArray(era.periods) ? era.periods : [];
-    if (!periods.length) { rows.push({ ...ef }); continue; }
-    for (const period of periods) {
-      const pf = {
-        period_name: period.name ?? '', period_start: period.start ?? '', period_end: period.end ?? '',
-        period_desc: period.desc ?? '', period_img: period.img ?? '', period_imgCredit: period.imgCredit ?? '',
-        period_imgDesc: period.imgDesc ?? '',
-      };
-      const epochs = Array.isArray(period.epochs) ? period.epochs : [];
-      if (!epochs.length) { rows.push({ ...ef, ...pf }); continue; }
-      for (const epoch of epochs) {
-        rows.push({
-          ...ef, ...pf,
-          epoch_name: epoch.name ?? '', epoch_start: epoch.start ?? '', epoch_end: epoch.end ?? '',
-          epoch_desc: epoch.desc ?? '', epoch_img: epoch.img ?? '', epoch_imgCredit: epoch.imgCredit ?? '',
-          epoch_imgDesc: epoch.imgDesc ?? '',
-        });
-      }
-    }
-  }
-  return rows;
-}
-
-function downloadTimelineCSV() {
-  const rows = flattenErasToRows();
-  const csv = [DATA_COLS.join(',')].concat(rows.map(r => DATA_COLS.map(c => csvCell(r[c])).join(','))).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'timeline-data.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function applyImportedEras(newEras) {
-  if (!Array.isArray(newEras) || !newEras.length) throw new Error('No eras found in file');
-  eras.length = 0;
-  eras.push(...newEras);
-  activeEra = null;
-  activePeriod = null;
-  activeEraXFn = null;
-  viewMode = 'eras';
-  zoomLocked = false;
-  Object.keys(eraEls).forEach(k => delete eraEls[k]);
-  periodEls = [];
-  epochEls = [];
-  baseEls = [];
-  hideImgTooltip();
-  hideEraCardTooltip();
-  hidePeriodCardTooltip();
-  buildViewForMode('eras');
-}
-
-function handleTimelineImport(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      let imported;
-      if (file.name.endsWith('.json')) {
-        const parsed = JSON.parse(reader.result);
-        imported = Array.isArray(parsed) ? parsed : parsed.eras;
-      } else {
-        imported = rowsToEras(parseCSV(reader.result));
-      }
-      applyImportedEras(imported);
-    } catch (err) {
-      alert('Import failed: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
 }
 
 function buildOverview() {
@@ -3438,20 +3328,13 @@ function makeDraggableCard(card, stemEl, nodeEl) {
   });
 }
 
-document.getElementById('export-data-btn').addEventListener('click', downloadTimelineCSV);
-document.getElementById('import-data-input').addEventListener('change', e => {
-  const file = e.target.files && e.target.files[0];
-  if (file) handleTimelineImport(file);
-  e.target.value = '';
-});
-
 loadTimelineData()
   .then(() => buildOverview())
   .catch(err => {
     console.error(err);
     canvas.innerHTML =
       '<div style="padding:48px 60px;max-width:520px;font-size:13px;line-height:1.7;color:var(--ink2)">' +
-      'Could not load <code>data/timeline-data.json</code>. Run a local server from the project root ' +
+      'Could not load <code>data/timeline-data.csv</code>. Run a local server from the project root ' +
       '(e.g. <code>python3 -m http.server 8080</code>) and open the app over HTTP.</div>';
   });
 </script>
