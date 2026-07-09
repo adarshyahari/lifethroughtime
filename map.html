@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Through Time — Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+  :root {
+    --bg: #f5f0e8;
+    --ink: #1a1710;
+    --ink2: #4a4535;
+    --ink3: #8a8270;
+    --card-bg: #ffffff;
+    --border: #1a1710;
+    --serif: 'Playfair Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+  }
+  .dark {
+    --bg: #161410;
+    --ink: #e8e0d0;
+    --ink2: #b8ad98;
+    --ink3: #6a6255;
+    --card-bg: #201e19;
+    --border: #4a4540;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--mono); overflow: hidden; transition: background 0.3s, color 0.3s; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(128,120,100,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(128,120,100,0.06) 1px, transparent 1px);
+    background-size: 32px 32px; pointer-events: none; z-index: 0;
+  }
+  .page { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 24px; flex-shrink: 0;
+  }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 22px; letter-spacing: 0.01em; }
+  h1 em { font-style: italic; color: var(--ink2); }
+  #nav-link {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink2); text-decoration: none; border: 1px solid rgba(128,120,100,0.3);
+    padding: 6px 12px; border-radius: 20px; transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  #nav-link:hover { color: var(--ink); border-color: var(--ink2); }
+  #header-controls { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  #theme-toggle {
+    width: 44px; height: 24px; border-radius: 12px; border: 1.5px solid rgba(128,120,100,0.3);
+    background: #e0dbd0; position: relative; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; padding: 0 4px;
+  }
+  .dark #theme-toggle { background: #2a2820; }
+  #theme-toggle .toggle-sun, #theme-toggle .toggle-moon {
+    position: absolute; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+    color: var(--ink3); top: 50%; transform: translateY(-50%);
+  }
+  #theme-toggle .toggle-sun { left: 5px; }
+  #theme-toggle .toggle-moon { right: 5px; }
+  .dark #theme-toggle .toggle-sun { opacity: 0.5; }
+  .dark #theme-toggle .toggle-moon { color: #e8a020; opacity: 1; }
+  #theme-toggle .toggle-sun svg, #theme-toggle .toggle-moon svg { width: 100%; height: 100%; }
+  #theme-toggle .toggle-knob {
+    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--bg); border: 1.5px solid var(--border); transition: transform 0.2s ease;
+  }
+  .dark #theme-toggle .toggle-knob { transform: translateX(20px); }
+
+  /* ── Stage ── */
+  #stage {
+    position: relative; flex: 1; min-height: 0; display: flex; align-items: stretch; justify-content: center;
+    gap: 20px; padding: 8px 24px;
+  }
+  #map-wrap {
+    position: relative; flex: 1 1 auto; min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #map-frame {
+    position: relative; width: 100%; max-width: 1200px; aspect-ratio: 1.994 / 1;
+    border: 1.5px solid var(--border); background: #dcd3bf;
+    box-shadow: 8px 8px 0 rgba(128,120,100,0.12);
+  }
+  .dark #map-frame { background: #2a2820; }
+  .map-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  }
+
+  #map-loading {
+    position: absolute; top: 10px; left: 10px; font-family: var(--mono); font-size: 11px; color: var(--ink3);
+    letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  #map-loading.visible { opacity: 1; }
+
+  #map-empty {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; font-family: var(--serif); font-style: italic; font-size: 16px;
+    line-height: 1.5; color: var(--ink3); padding: 20px;
+  }
+  #map-empty.visible { display: flex; }
+
+  /* ── Info panel ── */
+  #info-panel {
+    position: relative; flex: 0 0 340px; width: 340px;
+    background: var(--card-bg); border: 1.5px solid var(--border);
+    box-shadow: 6px 6px 0 rgba(128,120,100,0.14);
+    padding: 20px 22px; overflow-y: auto;
+  }
+  #info-era {
+    display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink3); margin-bottom: 8px;
+  }
+  #info-era-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  #info-period { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
+  #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
+  #info-desc { font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink2); margin-bottom: 14px; }
+  #info-era-desc {
+    font-size: 12.5px; line-height: 1.55; color: var(--ink3);
+    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 12px; margin-bottom: 14px;
+  }
+  #info-era-desc-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block; margin-bottom: 4px; color: var(--ink3); }
+  #info-creature { margin-bottom: 14px; display: none; }
+  #info-creature img {
+    width: 100%; display: block; border: 1.5px solid var(--border);
+  }
+  #info-creature-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
+  #info-approx {
+    font-size: 10.5px; line-height: 1.5; color: var(--ink3); font-style: italic;
+    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px; margin-bottom: 10px; display: none;
+  }
+  #info-credit { font-size: 9.5px; color: var(--ink3); opacity: 0.8; border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px; }
+  #info-credit a { color: inherit; }
+
+  /* ── Scrub track ── */
+  #scrub-wrap { flex-shrink: 0; padding: 10px 24px 22px; }
+  #era-groups { display: flex; height: 15px; margin-bottom: 2px; gap: 2px; }
+  .era-group {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3);
+    border-bottom: 2px solid; overflow: hidden; white-space: nowrap;
+  }
+  #period-groups { display: flex; height: 14px; margin-bottom: 4px; gap: 2px; }
+  .period-group {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; letter-spacing: 0.03em; color: var(--ink3);
+    border-bottom: 1.5px solid rgba(128,120,100,0.35); overflow: hidden; white-space: nowrap;
+    cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  }
+  .period-group:hover, .period-group.current { color: var(--ink); border-color: var(--ink2); }
+  #scrub-track {
+    position: relative; height: 38px; display: flex; align-items: stretch; gap: 1px;
+    cursor: pointer; touch-action: none;
+  }
+  .tick {
+    flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+  }
+  .tick-bar { width: 100%; height: 8px; border-radius: 2px; opacity: 0.35; transition: opacity 0.15s, height 0.15s; }
+  .tick.current .tick-bar { opacity: 1; height: 16px; }
+  #scrub-current-ma {
+    position: absolute; top: -22px; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink); background: var(--card-bg);
+    border: 1px solid var(--border); padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+    pointer-events: none; transition: left 0.12s ease;
+  }
+
+  #hint {
+    text-align: center; font-size: 10px; color: var(--ink3); letter-spacing: 0.05em;
+    margin-top: 6px; text-transform: uppercase;
+  }
+
+  @media (max-width: 900px) {
+    header { padding: 12px 16px; }
+    h1 { font-size: 18px; }
+    #nav-link { font-size: 10px; padding: 5px 10px; }
+    #stage { flex-direction: column; padding: 6px 12px; overflow-y: auto; }
+    #map-wrap { flex: 0 0 auto; width: 100%; }
+    #map-frame { max-width: none; }
+    #info-panel { flex: 1 1 auto; width: 100%; max-height: none; }
+    #info-period { font-size: 21px; }
+    #info-desc { font-size: 13px; }
+    #scrub-wrap { padding: 8px 10px 16px; }
+    .period-group { font-size: 0; }
+    .period-group.current { font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Life <em>Through</em> Time</h1>
+    <a id="nav-link" href="index.html">&larr; Card view</a>
+    <div id="header-controls">
+      <button id="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        <span class="toggle-sun" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path><path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </span>
+        <span class="toggle-knob"></span>
+        <span class="toggle-moon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <div id="map-wrap">
+      <div id="map-frame">
+        <img id="map-img" class="map-img" alt="">
+        <div id="map-loading">Loading map&hellip;</div>
+        <div id="map-empty">No paleogeographic reconstruction<br>survives this far back</div>
+      </div>
+    </div>
+    <div id="info-panel">
+      <div id="info-era"><span id="info-era-dot"></span><span id="info-era-label"></span></div>
+      <div id="info-period"></div>
+      <div id="info-dates"></div>
+      <p id="info-desc"></p>
+      <div id="info-creature">
+        <img id="info-creature-img" alt="">
+        <div id="info-creature-caption"></div>
+      </div>
+      <div id="info-era-desc"><span id="info-era-desc-label"></span><span id="info-era-desc-text"></span></div>
+      <div id="info-approx"></div>
+      <div id="info-credit"></div>
+    </div>
+  </div>
+
+  <div id="scrub-wrap">
+    <div id="era-groups"></div>
+    <div id="period-groups"></div>
+    <div id="scrub-track">
+      <div id="scrub-current-ma"></div>
+    </div>
+    <div id="hint">Drag, click, or use &larr; &rarr; to scrub through time</div>
+  </div>
+</div>
+
+<script>
+const TIMELINE_DATA_URL = 'data/timeline-data.csv';
+
+// ── Paleogeographic maps ──────────────────────────────────────────
+// Source: Scotese, C.R.; Vérard, C.; Burgener, L.; Elling, R.P.; Kocsis, Á.T. —
+// Mollweide Paleographic Maps of Earth, Wikimedia Commons, CC BY 4.0.
+// Keyed by age in millions of years ago (Ma). Every map whose date falls
+// within a period's range becomes its own scrubbable sub-stage frame.
+// Periods older than 750 Ma have no surviving reconstruction — those
+// periods get a single frame with no map, info card only.
+const STAGE_MAPS = {
+  '0.021': { age: '21 Ka',  stage: 'Late Pleistocene Age', url: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Mollweide_Paleographic_Map_of_Earth%2C_21_Ka_%28Late_Pleistocene_Age%29.png' },
+  '5':     { age: '5 Ma',   stage: 'Zanclean Age', url: 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Mollweide_Paleographic_Map_of_Earth%2C_5_Ma_%28Zanclean_Age%29.png' },
+  '15':    { age: '15 Ma',  stage: 'Langhian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Mollweide_Paleographic_Map_of_Earth%2C_15_Ma_%28Langhian_Age%29.png' },
+  '30':    { age: '30 Ma',  stage: 'Rupelian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/2/27/Mollweide_Paleographic_Map_of_Earth%2C_30_Ma_%28Rupelian_Age%29.png' },
+  '45':    { age: '45 Ma',  stage: 'Lutetian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Mollweide_Paleographic_Map_of_Earth%2C_45_Ma_%28Lutetian_Age%29.png' },
+  '60':    { age: '60 Ma',  stage: 'Selandian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/c/c9/Mollweide_Paleographic_Map_of_Earth%2C_60_Ma_%28Selandian_Age%29.png' },
+  '85':    { age: '85 Ma',  stage: 'Santonian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/Mollweide_Paleographic_Map_of_Earth%2C_85_Ma_%28Santonian_Age%29.png' },
+  '105':   { age: '105 Ma', stage: 'Albian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/f/f4/Mollweide_Paleographic_Map_of_Earth%2C_105_Ma_%28Albian_Age%29.png' },
+  '120':   { age: '120 Ma', stage: 'Aptian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Mollweide_Paleographic_Map_of_Earth%2C_120_Ma_%28Aptian_Age%29.png' },
+  '155':   { age: '155 Ma', stage: 'Oxfordian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Mollweide_Paleographic_Map_of_Earth%2C_155_Ma_%28Oxfordian_Age%29.png' },
+  '170':   { age: '170 Ma', stage: 'Bajocian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Mollweide_Paleographic_Map_of_Earth%2C_170_Ma_%28Bajocian_Age%29.png' },
+  '190':   { age: '190 Ma', stage: 'Pliensbachian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/8/8d/Mollweide_Paleographic_Map_of_Earth%2C_190_Ma_%28Pliensbachian_Age%29.png' },
+  '220':   { age: '220 Ma', stage: 'Norian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/3/39/Mollweide_Paleographic_Map_of_Earth%2C_220_Ma_%28Norian_Age%29.png' },
+  '225':   { age: '225 Ma', stage: 'Norian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/7/76/Mollweide_Paleographic_Map_of_Earth%2C_225_Ma_%28Norian_Age%29.png' },
+  '240':   { age: '240 Ma', stage: 'Ladinian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Mollweide_Paleographic_Map_of_Earth%2C_240_Ma_%28Ladinian_Age%29.png' },
+  '250':   { age: '250 Ma', stage: 'Olenekian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/b/bf/Mollweide_Paleographic_Map_of_Earth%2C_250_Ma_%28Olenekian_Age%29.png' },
+  '255':   { age: '255 Ma', stage: 'Wuchiapingian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Mollweide_Paleographic_Map_of_Earth%2C_255_Ma_%28Wuchiapingian_Age%29.png' },
+  '265':   { age: '265 Ma', stage: 'Wordian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/2/27/Mollweide_Paleographic_Map_of_Earth%2C_265_Ma_%28Wordian_Age%29.png' },
+  '275':   { age: '275 Ma', stage: 'Kungurian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/a/ad/Mollweide_Paleographic_Map_of_Earth%2C_275_Ma_%28Kungurian_Age%29.png' },
+  '285':   { age: '285 Ma', stage: 'Artinskian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Mollweide_Paleographic_Map_of_Earth%2C_285_Ma_%28Artinskian_Age%29.png' },
+  '310':   { age: '310 Ma', stage: 'Moscovian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Mollweide_Paleographic_Map_of_Earth%2C_310_Ma_%28Moscovian_Age%29.png' },
+  '330':   { age: '330 Ma', stage: 'Serpukhovian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/0/00/Mollweide_Paleographic_Map_of_Earth%2C_330_Ma_%28Serpukhovian_Age%29.png' },
+  '340':   { age: '340 Ma', stage: 'Viséan Age', url: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/Mollweide_Paleographic_Map_of_Earth%2C_340_Ma_%28Vis%C3%A9an_Age%29.png' },
+  '370':   { age: '370 Ma', stage: 'Famennian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mollweide_Paleographic_Map_of_Earth%2C_370_Ma_%28Famennian_Age%29.png' },
+  '390':   { age: '390 Ma', stage: 'Eifelian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Mollweide_Paleographic_Map_of_Earth%2C_390_Ma_%28Eifelian_Age%29.png' },
+  '405':   { age: '405 Ma', stage: 'Emsian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Mollweide_Paleographic_Map_of_Earth%2C_405_Ma_%28Emsian_Age%29.png' },
+  '420':   { age: '420 Ma', stage: 'Přídolí Epoch', url: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Mollweide_Paleographic_Map_of_Earth%2C_420_Ma_%28P%C5%99%C3%ADdol%C3%AD_Epoch%29.png' },
+  '425':   { age: '425 Ma', stage: 'Ludfordian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Mollweide_Paleographic_Map_of_Earth%2C_425_Ma_%28Ludfordian_Age%29.png' },
+  '430':   { age: '430 Ma', stage: 'Homerian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Mollweide_Paleographic_Map_of_Earth%2C_430_Ma_%28Homerian_Age%29.png' },
+  '440':   { age: '440 Ma', stage: 'Aeronian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/c/cd/Mollweide_Paleographic_Map_of_Earth%2C_440_Ma_%28Aeronian_Age%29.png' },
+  '450':   { age: '450 Ma', stage: 'Katian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Mollweide_Paleographic_Map_of_Earth%2C_450_Ma_%28Katian_Age%29.png' },
+  '465':   { age: '465 Ma', stage: 'Darriwilian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Mollweide_Paleographic_Map_of_Earth%2C_465_Ma_%28Darriwilian_Age%29.png' },
+  '480':   { age: '480 Ma', stage: 'Tremadocian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/7/71/Mollweide_Paleographic_Map_of_Earth%2C_480_Ma_%28Tremadocian_Age%29.png' },
+  '495':   { age: '495 Ma', stage: 'Paibian Stage', url: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Mollweide_Paleographic_Map_of_Earth%2C_495_Ma_%28Paibian_Stage%29.png' },
+  '505':   { age: '505 Ma', stage: 'Wuliuan Stage', url: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Mollweide_Paleographic_Map_of_Earth%2C_505_Ma_%28Wuliuan_Stage%29.png' },
+  '510':   { age: '510 Ma', stage: '', url: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Mollweide_Paleographic_Map_of_Earth%2C_510_Ma.png' },
+  '515':   { age: '515 Ma', stage: '', url: 'https://upload.wikimedia.org/wikipedia/commons/6/63/Mollweide_Paleographic_Map_of_Earth%2C_515_Ma.png' },
+  '530':   { age: '530 Ma', stage: 'Fortunian Age', url: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Mollweide_Paleographic_Map_of_Earth%2C_530_Ma_%28Fortunian_Age%29.png' },
+  '600':   { age: '600 Ma', stage: 'Ediacaran Period', url: 'https://upload.wikimedia.org/wikipedia/commons/2/2e/Mollweide_Paleographic_Map_of_Earth%2C_600_Ma_%28Ediacaran_Period%29.png' },
+  '690':   { age: '690 Ma', stage: 'Cryogenian Period', url: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Mollweide_Paleographic_Map_of_Earth%2C_690_Ma_%28Cryogenian_Period%29.png' },
+  '750':   { age: '750 Ma', stage: 'Tonian Period', url: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Mollweide_Paleographic_Map_of_Earth%2C_750_Ma_%28Tonian_Period%29.png' },
+};
+const MAP_CREDIT = 'Map: Scotese, Vérard, Burgener, Elling &amp; Kocsis — <a href="https://commons.wikimedia.org/wiki/Template:Other_versions/Mollweide_Paleographic_Map_of_Earth" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY 4.0';
+
+// ── CSV loading (same shape as index.html) ───────────────────────
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let i = 0;
+  let inQuotes = false;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { inQuotes = true; i++; continue; }
+    if (c === ',') { row.push(field); field = ''; i++; continue; }
+    if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.some(v => v !== '')) rows.push(row);
+      row = []; i++; continue;
+    }
+    field += c; i++;
+  }
+  row.push(field);
+  if (row.some(v => v !== '')) rows.push(row);
+  if (!rows.length) return [];
+  const headers = rows.shift();
+  return rows.map(r => Object.fromEntries(headers.map((h, j) => [h.trim(), r[j] ?? ''])));
+}
+
+function rowsToPeriods(rows) {
+  const periods = [];
+  const seen = new Set();
+  for (const row of rows) {
+    const name = (row.period_name || '').trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    periods.push({
+      name,
+      start: Number(row.period_start),
+      end: Number(row.period_end),
+      desc: (row.period_desc || '').trim(),
+      eraLabel: (row.era_label || '').trim(),
+      eraColor: (row.era_color || '#8a8270').trim(),
+      eraDesc: (row.era_desc || '').trim(),
+      creatureImg: (row.period_img || '').trim(),
+      creatureImgCredit: (row.period_imgCredit || '').trim(),
+      creatureImgDesc: (row.period_imgDesc || '').trim(),
+    });
+  }
+  return periods;
+}
+
+// ── Build scrub frames ────────────────────────────────────────────
+// Each period gets one frame per stage map whose age falls in its range,
+// ordered young -> old. Periods with no map in range (older than 750 Ma)
+// get a single mapless frame — info card only, no map.
+function buildFrames(periods) {
+  const stageEntries = Object.keys(STAGE_MAPS)
+    .map(k => ({ ma: Number(k), ...STAGE_MAPS[k] }))
+    .sort((a, b) => a.ma - b.ma);
+
+  const frames = [];
+  for (const p of periods) {
+    const inRange = stageEntries.filter(s => s.ma >= p.start && s.ma <= p.end);
+    if (inRange.length) {
+      for (const s of inRange) {
+        frames.push({ period: p, ma: s.ma, age: s.age, stage: s.stage, url: s.url, approx: false });
+      }
+    } else {
+      frames.push({ period: p, ma: null, age: null, stage: null, url: null, approx: true });
+    }
+  }
+  return frames;
+}
+
+// ── State & DOM ───────────────────────────────────────────────────
+let periods = [];
+let frames = [];
+let currentIndex = 0;
+const mapImg = document.getElementById('map-img');
+const mapLoading = document.getElementById('map-loading');
+const mapEmpty = document.getElementById('map-empty');
+const scrubTrack = document.getElementById('scrub-track');
+const eraGroupsEl = document.getElementById('era-groups');
+const periodGroupsEl = document.getElementById('period-groups');
+const currentMaEl = document.getElementById('scrub-current-ma');
+const infoEraDot = document.getElementById('info-era-dot');
+const infoEraLabel = document.getElementById('info-era-label');
+const infoPeriod = document.getElementById('info-period');
+const infoDates = document.getElementById('info-dates');
+const infoDesc = document.getElementById('info-desc');
+const infoCreature = document.getElementById('info-creature');
+const infoCreatureImg = document.getElementById('info-creature-img');
+const infoCreatureCaption = document.getElementById('info-creature-caption');
+const infoEraDescWrap = document.getElementById('info-era-desc');
+const infoEraDescLabel = document.getElementById('info-era-desc-label');
+const infoEraDescText = document.getElementById('info-era-desc-text');
+const infoApprox = document.getElementById('info-approx');
+const infoCredit = document.getElementById('info-credit');
+
+function buildEraGroups() {
+  eraGroupsEl.innerHTML = '';
+  let i = 0;
+  while (i < frames.length) {
+    const label = frames[i].period.eraLabel;
+    const color = frames[i].period.eraColor;
+    let span = 1;
+    while (i + span < frames.length && frames[i + span].period.eraLabel === label) span++;
+    const div = document.createElement('div');
+    div.className = 'era-group';
+    div.style.flex = span;
+    div.style.borderColor = color;
+    div.textContent = label;
+    eraGroupsEl.appendChild(div);
+    i += span;
+  }
+}
+
+function buildPeriodGroups() {
+  periodGroupsEl.innerHTML = '';
+  let i = 0;
+  while (i < frames.length) {
+    const period = frames[i].period;
+    let span = 1;
+    while (i + span < frames.length && frames[i + span].period === period) span++;
+    const div = document.createElement('div');
+    div.className = 'period-group';
+    div.dataset.startIndex = i;
+    div.style.flex = span;
+    div.textContent = period.name;
+    div.addEventListener('click', () => renderFrame(Number(div.dataset.startIndex)));
+    periodGroupsEl.appendChild(div);
+    i += span;
+  }
+}
+
+function buildTicks() {
+  scrubTrack.querySelectorAll('.tick').forEach(t => t.remove());
+  frames.forEach((f, idx) => {
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.dataset.index = idx;
+    const bar = document.createElement('div');
+    bar.className = 'tick-bar';
+    bar.style.background = f.period.eraColor;
+    if (!f.url) bar.style.opacity = '0.18';
+    tick.appendChild(bar);
+    scrubTrack.appendChild(tick);
+  });
+}
+
+const loadedUrls = new Set();
+function preload(url) {
+  if (!url || loadedUrls.has(url)) return;
+  const img = new Image();
+  img.onload = () => loadedUrls.add(url);
+  img.src = url;
+}
+
+function renderFrame(idx) {
+  currentIndex = Math.max(0, Math.min(frames.length - 1, idx));
+  const f = frames[currentIndex];
+  const p = f.period;
+
+  // Instant map swap — no crossfade
+  if (f.url) {
+    mapEmpty.classList.remove('visible');
+    mapImg.style.visibility = 'visible';
+    if (loadedUrls.has(f.url)) {
+      mapLoading.classList.remove('visible');
+      mapImg.src = f.url;
+    } else {
+      mapLoading.classList.add('visible');
+      mapImg.onload = () => {
+        loadedUrls.add(f.url);
+        mapLoading.classList.remove('visible');
+      };
+      mapImg.src = f.url;
+    }
+  } else {
+    mapImg.style.visibility = 'hidden';
+    mapImg.removeAttribute('src');
+    mapLoading.classList.remove('visible');
+    mapEmpty.classList.add('visible');
+  }
+
+  // Info panel (period-level content)
+  infoEraDot.style.background = p.eraColor;
+  infoEraLabel.textContent = p.eraLabel;
+  infoPeriod.textContent = p.name;
+  infoDates.textContent = `${p.start}–${p.end} million years ago`;
+  infoDesc.textContent = p.desc;
+
+  if (p.creatureImg) {
+    infoCreature.style.display = 'block';
+    infoCreatureImg.src = p.creatureImg;
+    infoCreatureCaption.textContent = [p.creatureImgDesc, p.creatureImgCredit].filter(Boolean).join(' — ');
+  } else {
+    infoCreature.style.display = 'none';
+    infoCreatureImg.removeAttribute('src');
+  }
+
+  if (p.eraDesc) {
+    infoEraDescWrap.style.display = 'block';
+    infoEraDescLabel.textContent = `${p.eraLabel} era — `;
+    infoEraDescText.textContent = p.eraDesc;
+  } else {
+    infoEraDescWrap.style.display = 'none';
+  }
+
+  if (!f.url) {
+    infoApprox.style.display = 'block';
+    infoApprox.textContent = 'No paleogeographic reconstruction survives this far back — continental positions this deep in the Precambrian are not well constrained.';
+  } else {
+    infoApprox.style.display = 'none';
+  }
+  infoCredit.innerHTML = f.url ? `${MAP_CREDIT} &mdash; map dated ~${f.age}${f.stage ? ' (' + f.stage + ')' : ''}` : '';
+
+  // Ticks, period groups + playhead
+  scrubTrack.querySelectorAll('.tick').forEach(t => t.classList.toggle('current', Number(t.dataset.index) === currentIndex));
+  periodGroupsEl.querySelectorAll('.period-group').forEach(g => g.classList.toggle('current', g.textContent === p.name && frames[Number(g.dataset.startIndex)].period === p));
+  positionPlayhead();
+
+  // Preload neighboring maps
+  preload(frames[currentIndex - 1] && frames[currentIndex - 1].url);
+  preload(frames[currentIndex + 1] && frames[currentIndex + 1].url);
+}
+
+function positionPlayhead() {
+  const tick = scrubTrack.querySelector(`.tick[data-index="${currentIndex}"]`);
+  if (!tick) return;
+  const trackRect = scrubTrack.getBoundingClientRect();
+  const tickRect = tick.getBoundingClientRect();
+  const center = tickRect.left - trackRect.left + tickRect.width / 2;
+  currentMaEl.style.left = center + 'px';
+  const f = frames[currentIndex];
+  currentMaEl.textContent = f.url ? `~${f.age}` : `${f.period.start}–${f.period.end} Ma`;
+}
+
+// ── Scrub interaction ─────────────────────────────────────────────
+function indexFromPointerX(clientX) {
+  const rect = scrubTrack.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  return Math.round(ratio * (frames.length - 1));
+}
+
+let dragging = false;
+scrubTrack.addEventListener('pointerdown', e => {
+  dragging = true;
+  scrubTrack.setPointerCapture(e.pointerId);
+  renderFrame(indexFromPointerX(e.clientX));
+});
+scrubTrack.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  renderFrame(indexFromPointerX(e.clientX));
+});
+scrubTrack.addEventListener('pointerup', () => { dragging = false; });
+scrubTrack.addEventListener('pointercancel', () => { dragging = false; });
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') { renderFrame(currentIndex + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { renderFrame(currentIndex - 1); e.preventDefault(); }
+  else if (e.key === 'Home') { renderFrame(0); e.preventDefault(); }
+  else if (e.key === 'End') { renderFrame(frames.length - 1); e.preventDefault(); }
+});
+
+window.addEventListener('resize', positionPlayhead);
+
+// ── Theme toggle ──────────────────────────────────────────────────
+function toggleTheme() {
+  document.documentElement.classList.toggle('dark');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+async function init() {
+  const res = await fetch(TIMELINE_DATA_URL);
+  if (!res.ok) throw new Error('Failed to load ' + TIMELINE_DATA_URL + ' (' + res.status + ')');
+  periods = rowsToPeriods(parseCSV(await res.text()));
+  frames = buildFrames(periods);
+  buildEraGroups();
+  buildPeriodGroups();
+  buildTicks();
+  renderFrame(0);
+}
+init().catch(err => {
+  infoPeriod.textContent = 'Failed to load timeline data';
+  infoDesc.textContent = String(err.message || err);
+  console.error(err);
+});
+</script>
+</body>
+</html>
