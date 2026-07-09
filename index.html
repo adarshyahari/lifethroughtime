@@ -34,9 +34,204 @@
   }
   .page { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
 
+  /* ── Header controls ── */
+  #header-controls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #help-wrap { position: relative; flex-shrink: 0; }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #help-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: #e0dbd0;
+    color: var(--ink3);
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .dark #help-btn {
+    background: #2a2820;
+    color: var(--ink3);
+  }
+  #help-btn:hover, #help-btn[aria-expanded="true"] {
+    color: var(--ink2);
+    border-color: rgba(128,120,100,0.25);
+  }
+
+  #help-card {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, calc(100vw - 32px));
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    box-shadow: 6px 6px 0 rgba(128,120,100,0.12);
+    padding: 22px 24px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 500;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  #help-card.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  #help-card .help-lede {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--ink3);
+    margin-bottom: 10px;
+  }
+  .help-intro {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(128,120,100,0.15);
+  }
+  #help-card .help-section {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink2);
+    margin-bottom: 12px;
+  }
+  #help-card .help-section:last-child { margin-bottom: 0; }
+  #help-card .help-section strong {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .help-time-ladder {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .help-time-rung {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    padding: 3px 8px;
+    background: rgba(128,120,100,0.08);
+    border-radius: 3px;
+  }
+  .help-time-chevron {
+    color: var(--ink3);
+    font-size: 10px;
+    opacity: 0.45;
+    line-height: 1;
+  }
+  .help-time-example {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--ink3);
+  }
+  .help-time-example em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink2);
+  }
+  .help-scale-demos {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 8px;
+  }
+  .help-scale-pill {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid transparent;
+    font-family: var(--mono);
+    white-space: nowrap;
+    display: inline-block;
+    line-height: 1.2;
+    box-sizing: border-box;
+    transform: scale(1);
+    opacity: 1;
+    transition:
+      background 0.35s ease,
+      color 0.35s ease,
+      border-color 0.35s ease,
+      transform 0.12s ease,
+      opacity 0.12s ease;
+  }
+  .help-scale-pill.is-clicking {
+    transform: scale(0.94);
+    opacity: 0.82;
+  }
+  .help-scale-pill.even-mode {
+    background: var(--card-bg);
+    color: var(--ink);
+    border-color: var(--border);
+  }
+  .help-scale-desc {
+    display: block;
+    margin: 0;
+  }
+
+  .help-sheet-handle {
+    display: none;
+  }
+
+  .help-sheet-scroll {
+    /* desktop: no extra wrapper behavior */
+  }
+
+  #help-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 450;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #help-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   /* ── Dark mode toggle ── */
   #theme-toggle {
-    margin-left: auto;
     width: 64px; height: 36px;
     background: #e0dbd0;
     border-radius: 18px;
@@ -455,7 +650,8 @@
       align-items: center;
       min-height: 68px;
     }
-    header h1 { font-size: 18px; flex: 1; min-width: 0; }
+    header h1 { font-size: 18px; min-width: 0; }
+    .header-title { flex: 1; min-width: 0; gap: 8px; }
     #header-nav {
       order: 3; width: 100%; flex-basis: 100%;
       margin-left: 0; margin-right: 0;
@@ -463,6 +659,57 @@
       font-size: 10px; letter-spacing: 0.05em;
     }
     #theme-toggle { margin-left: 0; order: 2; width: 52px; height: 28px; border-radius: 14px; }
+    #header-controls { order: 2; margin-left: auto; gap: 8px; }
+    #help-btn { width: 26px; height: 26px; font-size: 13px; }
+    #help-overlay { display: block; }
+    #help-card {
+      position: fixed;
+      left: 50%;
+      top: auto;
+      bottom: 0;
+      width: calc(100% - 32px);
+      max-width: 400px;
+      max-height: min(85vh, 720px);
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px 12px 0 0;
+      border-bottom: none;
+      box-shadow: none;
+      z-index: 500;
+      opacity: 1;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), visibility 0.35s;
+    }
+    #help-card.visible {
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .help-sheet-handle {
+      display: flex;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 10px 0 2px;
+    }
+    .help-sheet-handle::before {
+      content: '';
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(128,120,100,0.35);
+    }
+    .help-sheet-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 8px 20px 24px;
+    }
     .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
     .dark .toggle-knob { transform: translateX(24px); }
     .toggle-sun, .toggle-moon { font-size: 16px; width: 16px;}
@@ -494,13 +741,20 @@
 <body>
 <div class="page">
   <header>
-    <h1>Life <em>Through</em> Time</h1>
+    <div class="header-title">
+      <h1>Life <em>Through</em> Time</h1>
+      <div id="help-wrap">
+        <button id="help-btn" type="button" aria-label="How to use this timeline" aria-expanded="false" aria-controls="help-card">?</button>
+      </div>
+    </div>
     <nav id="header-nav" aria-label="Timeline navigation"></nav>
-    <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-      <span class="toggle-sun">☀</span>
-      <span class="toggle-knob"></span>
-      <span class="toggle-moon">☾</span>
-    </button>
+    <div id="header-controls">
+      <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        <span class="toggle-sun">☀</span>
+        <span class="toggle-knob"></span>
+        <span class="toggle-moon">☾</span>
+      </button>
+    </div>
   </header>
 
   <div class="stage">
@@ -518,12 +772,44 @@
 <div id="era-card-tooltip" class="period-card-tooltip">View all Periods in this Era</div>
 <div id="scale-pill" role="button" tabindex="0" title="Toggle time-proportional scale">1px = 1 million years</div>
 <div id="img-overlay"></div>
+<div id="help-overlay"></div>
+<div id="help-card" role="dialog" aria-hidden="true" aria-labelledby="help-card-title">
+  <div class="help-sheet-handle" aria-hidden="true"></div>
+  <div class="help-sheet-scroll">
+    <div class="help-intro">
+      <p class="help-lede" id="help-card-title">An interactive journey through 4.57 billion years of Earth history — from the planet’s earliest days to the rise of complex life, dinosaurs, and humans — nested as eon, era, period, and epoch.</p>
+      <div class="help-time-ladder" aria-label="Geologic time scale, broadest to finest">
+        <span class="help-time-rung">Eon</span>
+        <span class="help-time-chevron" aria-hidden="true">›</span>
+        <span class="help-time-rung">Era</span>
+        <span class="help-time-chevron" aria-hidden="true">›</span>
+        <span class="help-time-rung">Period</span>
+        <span class="help-time-chevron" aria-hidden="true">›</span>
+        <span class="help-time-rung">Epoch</span>
+      </div>
+      <p class="help-time-example">Phanerozoic → Cenozoic → Quaternary → Holocene</p>
+    </div>
+    <div class="help-section">
+      <strong>Navigate</strong>
+      Scroll through time. Click cards to zoom deeper, or use All Eras / All Periods / All Epochs in the header to see everything at once.
+    </div>
+    <div class="help-section">
+      <strong>Scale pill</strong>
+      <div class="help-scale-demos" aria-hidden="true">
+        <span class="help-scale-pill" id="help-scale-pill-demo">1.0px = 1 million years</span>
+      </div>
+      <p class="help-scale-desc">Toggle between a time-proportional timeline — where distance reflects real duration — and even spacing, which gives every era, period, or epoch equal room on screen.</p>
+    </div>
+  </div>
+</div>
 <div id="img-tooltip"><img id="img-tooltip-img" src="" alt=""><div class="img-caption"><b id="img-tooltip-desc"></b><span id="img-tooltip-credit"></span></div></div>
 <div id="made-by">Made by <a href="https://adarshya.webflow.io/" target="_blank" rel="noopener">Adarshya</a></div>
 
 <script>
 const LEFT_PAD   = 80;
 const LEFT_PAD_ZOOMED = () => IS_MOBILE() ? 120 : 160;
+const CARD_EDGE_PAD = () => IS_MOBILE() ? 20 : 32;
+const LEFT_PAD_GLOBAL = () => Math.max(LEFT_PAD, Math.ceil(CARD_W() / 2 + CARD_EDGE_PAD()));
 const RIGHT_PAD  = 120;
 const TOTAL_MYA  = 4570;
 const BASE_SCALE = 1; // 1px per mya
@@ -1098,7 +1384,7 @@ function updateNavigation() {
 
   if (activePeriod) {
     nav.innerHTML =
-      `<button type="button" class="crumb" data-action="global">← ${VIEW_LABELS.eras}</button>` +
+      `<button type="button" class="crumb" data-view="eras">${VIEW_LABELS.eras}</button>` +
       navSep() +
       `<span class="crumb context">${activeEra.label} Era</span>` +
       navSep() +
@@ -1110,7 +1396,7 @@ function updateNavigation() {
   }
 
   nav.innerHTML =
-    `<button type="button" class="crumb" data-action="global">← ${VIEW_LABELS.eras}</button>` +
+    `<button type="button" class="crumb" data-view="eras">${VIEW_LABELS.eras}</button>` +
     navSep() +
     `<span class="crumb context">${activeEra.label} Era</span>` +
     navSep() +
@@ -1485,6 +1771,13 @@ function buildEraBackgroundBars(xFn) {
   });
 }
 
+function clearBaseElsExceptTimeline() {
+  baseEls.forEach(el => {
+    if (!el.classList.contains('timeline-line')) el.remove();
+  });
+  baseEls = baseEls.filter(el => el.classList.contains('timeline-line'));
+}
+
 function navigateToView(mode, cx, cy) {
   if (zoomLocked) return;
   if (!activeEra && viewMode === mode) return;
@@ -1546,22 +1839,24 @@ function buildViewForMode(mode, opts = {}) {
     document.getElementById('legend').innerHTML = '';
   } else if (mode === 'periods') {
     const items = getAllGlobalPeriodCardsFlat();
+    const padLeft = LEFT_PAD_GLOBAL();
     if (timeProportional) {
       globalScale = getGlobalPeriodScale();
-      const totalW = LEFT_PAD + TOTAL_MYA * globalScale + RIGHT_PAD;
+      const totalW = padLeft + TOTAL_MYA * globalScale + RIGHT_PAD;
+      const xFn = mya => padLeft + mya * globalScale;
       canvas.style.height = canvasH + 'px';
       if (shouldLockCanvasTransition(opts)) canvas.style.transition = 'none';
       canvas.style.width = totalW + 'px';
-      buildTimelineBase(globalX, totalW);
-      spawnBoundaryMarkers(globalX, collectCardBoundaries(items), baseEls);
-      buildEraBackgroundBars(globalX);
-      spawnAllTimelineCards(globalX, globalScale, periodEls, null, items);
+      buildTimelineBase(xFn, totalW);
+      spawnBoundaryMarkers(xFn, collectCardBoundaries(items), baseEls);
+      buildEraBackgroundBars(xFn);
+      spawnAllTimelineCards(xFn, globalScale, periodEls, null, items);
       raiseTimelineMarkers();
       setNowMarkersVisible(true);
       if (!opts.skipScalePill) updateScalePill(globalScale);
     } else {
-      const layout = getEvenLayout(items.length);
-      const markerX = makeEvenMarkerX(layout.totalW);
+      const layout = getEvenLayout(items.length, padLeft, RIGHT_PAD);
+      const markerX = makeEvenMarkerX(layout.totalW, padLeft, RIGHT_PAD);
       canvas.style.height = canvasH + 'px';
       if (shouldLockCanvasTransition(opts)) canvas.style.transition = 'none';
       canvas.style.width = layout.totalW + 'px';
@@ -1577,22 +1872,24 @@ function buildViewForMode(mode, opts = {}) {
     buildEraLegend();
   } else if (mode === 'epochs') {
     const items = getAllTimelineCardsFlat();
+    const padLeft = LEFT_PAD_GLOBAL();
     if (timeProportional) {
       globalScale = getGlobalEpochScale();
-      const totalW = LEFT_PAD + TOTAL_MYA * globalScale + RIGHT_PAD;
+      const totalW = padLeft + TOTAL_MYA * globalScale + RIGHT_PAD;
+      const xFn = mya => padLeft + mya * globalScale;
       canvas.style.height = canvasH + 'px';
       if (shouldLockCanvasTransition(opts)) canvas.style.transition = 'none';
       canvas.style.width = totalW + 'px';
-      buildTimelineBase(globalX, totalW);
-      spawnBoundaryMarkers(globalX, collectCardBoundaries(items), baseEls);
-      buildEraBackgroundBars(globalX);
-      spawnAllTimelineCards(globalX, globalScale, epochEls, null, items);
+      buildTimelineBase(xFn, totalW);
+      spawnBoundaryMarkers(xFn, collectCardBoundaries(items), baseEls);
+      buildEraBackgroundBars(xFn);
+      spawnAllTimelineCards(xFn, globalScale, epochEls, null, items);
       raiseTimelineMarkers();
       setNowMarkersVisible(true);
       if (!opts.skipScalePill) updateScalePill(globalScale);
     } else {
-      const layout = getEvenLayout(items.length);
-      const markerX = makeEvenMarkerX(layout.totalW);
+      const layout = getEvenLayout(items.length, padLeft, RIGHT_PAD);
+      const markerX = makeEvenMarkerX(layout.totalW, padLeft, RIGHT_PAD);
       canvas.style.height = canvasH + 'px';
       if (shouldLockCanvasTransition(opts)) canvas.style.transition = 'none';
       canvas.style.width = layout.totalW + 'px';
@@ -1857,10 +2154,12 @@ function spawnAllTimelineCards(xFn, scale, registry, evenLayout, items) {
   }
 
   cardItems.forEach((item, idx) => {
-    const cardOpts = {
-      visibleClass: true,
-      allowEraZoom: true,
-    };
+    const cardOpts = { visibleClass: true };
+    if (item.type === 'period' && item.period.epochs?.length > 0) {
+      cardOpts.allowPeriodZoom = true;
+    } else if (item.type === 'era' && Array.isArray(item.era.periods) && item.era.periods.length > 0) {
+      cardOpts.allowEraZoom = true;
+    }
     if (evenLayout) {
       cardOpts.evenPos = {
         midX: evenLayout.midX(idx),
@@ -2074,6 +2373,7 @@ function animateEraZoomIn(era, opts = {}) {
     updateNavigation();
     document.getElementById('legend').innerHTML = '';
     clearStemSvg();
+    clearBaseElsExceptTimeline();
     periodEls.forEach(el => el.remove());
     epochEls.forEach(el => el.remove());
     periodEls = [];
@@ -2233,6 +2533,7 @@ function enterEraPeriodView(era, opts = {}) {
   updateNavigation();
   document.getElementById('legend').innerHTML = '';
   clearStemSvg();
+  clearBaseElsExceptTimeline();
   periodEls.forEach(el => el.remove());
   epochEls.forEach(el => el.remove());
   periodEls = [];
@@ -2394,10 +2695,12 @@ function animatePeriodZoomIn(era, period, opts = {}) {
   const { skipScalePill = false } = opts;
   const sel = getPeriodDomGroup(era, period);
   if (!sel || !sel.seg) {
+    activeEra = era;
     activePeriod = period;
     updateNavigation();
     buildPeriodLegend(era);
     clearStemSvg();
+    clearBaseElsExceptTimeline();
     periodEls.forEach(el => el.remove());
     epochEls.forEach(el => el.remove());
     periodEls = [];
@@ -2502,6 +2805,7 @@ function animatePeriodZoomIn(era, period, opts = {}) {
     requestAnimationFrame(tickScroll);
 
     setTimeout(() => {
+      activeEra = era;
       activePeriod = period;
       updateNavigation();
       buildPeriodLegend(era);
@@ -2537,15 +2841,18 @@ function enterEraEpochView(era, opts = {}) {
   const { clickedPeriod = null, animate = false, preserveScroll = false, skipScalePill = false, layoutTransition = false } = opts;
 
   if (animate && clickedPeriod && !activePeriod && !layoutTransition) {
+    activeEra = era;
     animatePeriodZoomIn(era, clickedPeriod, { skipScalePill });
     return;
   }
 
+  activeEra = era;
   if (clickedPeriod) activePeriod = clickedPeriod;
   updateNavigation();
   buildPeriodLegend(era);
 
   clearStemSvg();
+  clearBaseElsExceptTimeline();
   epochEls.forEach(el => el.remove());
   periodEls.forEach(el => el.remove());
   periodEls = [];
@@ -2667,6 +2974,7 @@ function zoomPeriod(era, clickedPeriod, cx, cy) {
   if (zoomLocked || activePeriod) return;
   if (!Array.isArray(clickedPeriod.epochs) || clickedPeriod.epochs.length === 0) return;
 
+  activeEra = era;
   enterEraEpochView(era, { clickedPeriod, animate: true, cx, cy });
 }
 
@@ -2770,13 +3078,30 @@ function zoomOut(cx, cy) {
   if (zoomLocked || !activeEra) return;
   const ox = cx ?? window.innerWidth / 2;
   const oy = cy ?? window.innerHeight / 2;
+  const returnMode = viewMode;
 
   animateZoomOut(ox, oy, () => {
     activeEra = null; activePeriod = null; activeEraXFn = null;
-    viewMode = 'eras';
+    if (returnMode === 'eras') viewMode = 'eras';
     [...epochEls, ...periodEls].forEach(el => el.remove());
     periodEls = []; epochEls = [];
     buildViewForMode(viewMode);
+  });
+}
+
+function zoomOutToGlobalPeriods(cx, cy) {
+  if (zoomLocked || !activeEra) return;
+  const ox = cx ?? window.innerWidth / 2;
+  const oy = cy ?? window.innerHeight / 2;
+
+  animateZoomOut(ox, oy, () => {
+    viewMode = 'periods';
+    activeEra = null;
+    activePeriod = null;
+    activeEraXFn = null;
+    periodEls = [];
+    epochEls = [];
+    buildViewForMode('periods');
   });
 }
 
@@ -2821,8 +3146,9 @@ viewport.addEventListener('mouseleave', () => backHint.classList.remove('visible
 
 viewport.addEventListener('click', e => {
   if (!activeEra) return;
-  // If mobile image sheet is open, don't trigger zoom-out
+  // If mobile image or help sheet is open, don't trigger zoom-out
   if (imgOverlay.classList.contains('visible')) return;
+  if (document.getElementById('help-overlay')?.classList.contains('visible')) return;
   // Ignore clicks on any interactive card/node/bar element or the SVG stem layer
   if (e.target.closest('.era-card,.era-node,.era-bar,.period-card,.period-node,.epoch-card,.epoch-node,.stem-svg')) return;
   if (activePeriod) zoomOutEpochs(e.clientX, e.clientY);
@@ -2841,13 +3167,10 @@ headerNav.addEventListener('click', e => {
   if (!actionBtn) return;
   e.stopPropagation();
 
-  if (actionBtn.dataset.action === 'global') {
-    if (activeEra) zoomOut(e.clientX, e.clientY);
-    return;
-  }
-
   if (actionBtn.dataset.action === 'periods' && activePeriod) {
-    zoomOutEpochs(e.clientX, e.clientY);
+    if (viewMode !== 'eras') zoomOutToGlobalPeriods(e.clientX, e.clientY);
+    else zoomOutEpochs(e.clientX, e.clientY);
+    return;
   }
 });
 
@@ -2952,6 +3275,7 @@ let tooltipTimer;
 // ── Mobile: slide-up sheet ────────────────────────────────────────
 function showImgSheet(period) {
   clearTimeout(tooltipTimer);
+  if (typeof window.__closeHelpCard === 'function') window.__closeHelpCard();
   imgTooltipImg.src = period.img;
   imgTooltipDesc.textContent   = period.imgDesc || period.name;
   imgTooltipCredit.textContent = period.imgCredit || '';
@@ -3245,6 +3569,152 @@ loadTimelineData()
       'Could not load <code>data/timeline-data.csv</code>. Run a local server from the project root ' +
       '(e.g. <code>python3 -m http.server 8080</code>) and open the app over HTTP.</div>';
   });
+
+(function initHelpCard() {
+  const helpWrap = document.getElementById('help-wrap');
+  const helpBtn = document.getElementById('help-btn');
+  const helpCard = document.getElementById('help-card');
+  const helpOverlay = document.getElementById('help-overlay');
+  const helpScroll = helpCard?.querySelector('.help-sheet-scroll');
+  const helpScalePill = document.getElementById('help-scale-pill-demo');
+  const HELP_SCALE_STATES = [
+    { text: '1.0px = 1 million years', even: false },
+    { text: 'Even spacing', even: true },
+  ];
+  let helpScaleIdx = 0;
+  let helpScaleTimer = null;
+
+  function resetHelpScalePill() {
+    if (!helpScalePill) return;
+    helpScaleIdx = 0;
+    const state = HELP_SCALE_STATES[0];
+    helpScalePill.classList.remove('even-mode', 'is-clicking');
+    helpScalePill.textContent = state.text;
+    helpScalePill.style.width = '';
+    helpScalePill.style.transition = '';
+  }
+
+  function animateHelpScalePill() {
+    if (!helpScalePill) return;
+    helpScalePill.classList.add('is-clicking');
+    setTimeout(() => {
+      helpScalePill.classList.remove('is-clicking');
+      helpScaleIdx = (helpScaleIdx + 1) % HELP_SCALE_STATES.length;
+      const next = HELP_SCALE_STATES[helpScaleIdx];
+      const startW = helpScalePill.offsetWidth;
+      helpScalePill.style.width = startW + 'px';
+      helpScalePill.classList.toggle('even-mode', next.even);
+      helpScalePill.textContent = next.text;
+
+      const colorTransition = 'background 0.35s ease, color 0.35s ease, border-color 0.35s ease, transform 0.12s ease, opacity 0.12s ease';
+      helpScalePill.style.transition = colorTransition;
+      helpScalePill.style.width = 'auto';
+      const targetW = helpScalePill.offsetWidth;
+      helpScalePill.style.width = startW + 'px';
+      void helpScalePill.offsetWidth;
+      helpScalePill.style.transition = `${colorTransition}, width 0.4s cubic-bezier(0.42, 0, 0.58, 1)`;
+      requestAnimationFrame(() => {
+        helpScalePill.style.width = targetW + 'px';
+      });
+    }, 120);
+  }
+
+  function startHelpScaleDemo() {
+    if (helpScaleTimer || !helpScalePill) return;
+    helpScaleTimer = setInterval(animateHelpScalePill, 4000);
+  }
+
+  function stopHelpScaleDemo() {
+    if (helpScaleTimer) {
+      clearInterval(helpScaleTimer);
+      helpScaleTimer = null;
+    }
+    resetHelpScalePill();
+  }
+
+  function positionHelpCardDesktop() {
+    const rect = helpBtn.getBoundingClientRect();
+    helpCard.style.left = Math.max(16, rect.left) + 'px';
+    helpCard.style.top = (rect.bottom + 10) + 'px';
+    helpCard.style.transform = helpCard.classList.contains('visible') ? 'translateY(0)' : 'translateY(-4px)';
+  }
+
+  function setHelpOpen(open) {
+    if (!IS_MOBILE()) {
+      if (open) showDesktopHelp();
+      else hideDesktopHelp();
+      return;
+    }
+    helpCard.classList.toggle('visible', open);
+    helpBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    helpCard.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (IS_MOBILE()) {
+      helpOverlay.classList.toggle('visible', open);
+      document.body.style.overflow = open ? 'hidden' : '';
+      if (open && helpScroll) helpScroll.scrollTop = 0;
+    }
+    if (open) {
+      if (IS_MOBILE() && imgOverlay.classList.contains('visible')) hideImgSheet();
+      startHelpScaleDemo();
+    } else {
+      stopHelpScaleDemo();
+    }
+  }
+
+  window.__closeHelpCard = () => setHelpOpen(false);
+
+  helpBtn.addEventListener('click', e => {
+    if (!IS_MOBILE()) return;
+    e.stopPropagation();
+    setHelpOpen(!helpCard.classList.contains('visible'));
+  });
+
+  helpOverlay.addEventListener('click', () => setHelpOpen(false));
+  helpOverlay.addEventListener('touchend', e => {
+    e.preventDefault();
+    setHelpOpen(false);
+  });
+
+  let desktopHelpHideTimer = null;
+
+  function showDesktopHelp() {
+    if (IS_MOBILE()) return;
+    clearTimeout(desktopHelpHideTimer);
+    positionHelpCardDesktop();
+    helpCard.classList.add('visible');
+    helpCard.style.opacity = '1';
+    helpCard.style.visibility = 'visible';
+    helpCard.style.pointerEvents = 'auto';
+    helpCard.style.transform = 'translateY(0)';
+    startHelpScaleDemo();
+  }
+
+  function hideDesktopHelp() {
+    if (IS_MOBILE()) return;
+    helpCard.classList.remove('visible');
+    helpCard.style.opacity = '';
+    helpCard.style.visibility = '';
+    helpCard.style.pointerEvents = '';
+    helpCard.style.transform = '';
+    stopHelpScaleDemo();
+  }
+
+  function scheduleHideDesktopHelp() {
+    clearTimeout(desktopHelpHideTimer);
+    desktopHelpHideTimer = setTimeout(hideDesktopHelp, 40);
+  }
+
+  helpWrap.addEventListener('mouseenter', showDesktopHelp);
+  helpWrap.addEventListener('mouseleave', scheduleHideDesktopHelp);
+  helpCard.addEventListener('mouseenter', showDesktopHelp);
+  helpCard.addEventListener('mouseleave', scheduleHideDesktopHelp);
+  helpBtn.addEventListener('focus', showDesktopHelp);
+  helpBtn.addEventListener('blur', scheduleHideDesktopHelp);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && helpCard.classList.contains('visible')) setHelpOpen(false);
+  });
+})();
 </script>
 </body>
 </html>
