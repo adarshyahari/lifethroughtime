@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,25 +51,55 @@
   #header-controls { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
   #theme-toggle {
-    width: 44px; height: 24px; border-radius: 12px; border: 1.5px solid rgba(128,120,100,0.3);
-    background: #e0dbd0; position: relative; cursor: pointer; flex-shrink: 0;
-    display: flex; align-items: center; padding: 0 4px;
+    width: 64px; height: 36px;
+    background: #e0dbd0;
+    border-radius: 18px;
+    border: none; cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.3s;
+    display: flex; align-items: center;
+    padding: 0 6px;
+    justify-content: space-between;
   }
-  .dark #theme-toggle { background: #2a2820; }
-  #theme-toggle .toggle-sun, #theme-toggle .toggle-moon {
-    position: absolute; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
-    color: var(--ink3); top: 50%; transform: translateY(-50%);
+  .dark #theme-toggle {
+    background: #2a2820;
   }
-  #theme-toggle .toggle-sun { left: 5px; }
-  #theme-toggle .toggle-moon { right: 5px; }
-  .dark #theme-toggle .toggle-sun { opacity: 0.5; }
-  .dark #theme-toggle .toggle-moon { color: #e8a020; opacity: 1; }
-  #theme-toggle .toggle-sun svg, #theme-toggle .toggle-moon svg { width: 100%; height: 100%; }
-  #theme-toggle .toggle-knob {
-    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
-    background: var(--bg); border: 1.5px solid var(--border); transition: transform 0.2s ease;
+  .toggle-sun, .toggle-moon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: color 0.3s, opacity 0.3s;
+    z-index: 1;
+    pointer-events: none;
+    width: 22px;
+    height: 22px;
+    color: inherit;
   }
-  .dark #theme-toggle .toggle-knob { transform: translateX(20px); }
+  .toggle-sun svg, .toggle-moon svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+  }
+  .toggle-sun  { color: #e8a020; opacity: 1; }
+  .toggle-moon { color: #8a8270; opacity: 0.5; }
+  .dark .toggle-sun  { color: #8a8270; opacity: 0.5; }
+  .dark .toggle-moon { color: #e8a020; opacity: 1; }
+  .toggle-knob {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    top: 4px; left: 4px;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+    pointer-events: none;
+  }
+  .dark .toggle-knob {
+    transform: translateX(28px);
+    background: #3a3830;
+  }
 
   /* ── Stage ── */
   #stage {
@@ -81,7 +111,11 @@
     display: flex; align-items: center; justify-content: center;
   }
   #map-frame {
-    position: relative; width: 100%; max-width: 1200px; aspect-ratio: 1.994 / 1;
+    /* Height-driven (not width-driven) so the map container always matches
+       the info panel's full stretched height; width follows from the ratio
+       and is capped so it never overspills #map-wrap. */
+    position: relative; height: 100%; width: auto; max-width: 100%; max-height: 100%;
+    aspect-ratio: 1.994 / 1;
     border: 1.5px solid var(--border); background: #dcd3bf;
     box-shadow: 8px 8px 0 rgba(128,120,100,0.12);
   }
@@ -97,12 +131,18 @@
   }
   #map-loading.visible { opacity: 1; }
 
-  #map-empty {
-    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
-    text-align: center; font-family: var(--serif); font-style: italic; font-size: 16px;
-    line-height: 1.5; color: var(--ink3); padding: 20px;
+  /* No map available for this stretch of time: drop the map entirely and
+     let the info panel take the full stage width, laid out in 2 columns. */
+  #stage.no-map #map-wrap { display: none; }
+  #stage.no-map #info-panel { flex: 1 1 auto; width: 100%; }
+  #stage.no-map #info-content.has-image {
+    grid-template-columns: 1.4fr 1fr;
+    grid-template-areas: "desc creature" "eradesc creature" "mapcredit creature";
   }
-  #map-empty.visible { display: flex; }
+  #stage.no-map #info-content:not(.has-image) {
+    grid-template-columns: 1fr;
+    grid-template-areas: "desc" "eradesc" "mapcredit";
+  }
 
   /* ── Info panel ── */
   #info-panel {
@@ -118,52 +158,69 @@
   #info-era-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   #info-period { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
   #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
-  #info-desc { font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink2); margin-bottom: 14px; }
+  #info-content {
+    display: grid; grid-template-columns: 1fr; row-gap: 14px; column-gap: 24px;
+    grid-template-areas: "desc" "eradesc" "creature" "mapcredit";
+  }
+  #info-desc { grid-area: desc; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink2); }
   #info-era-desc {
-    font-size: 12.5px; line-height: 1.55; color: var(--ink3);
-    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 12px; margin-bottom: 14px;
+    grid-area: eradesc; font-size: 12.5px; line-height: 1.55; color: var(--ink3);
+    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 12px;
   }
   #info-era-desc-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block; margin-bottom: 4px; color: var(--ink3); }
-  #info-creature { margin-bottom: 14px; display: none; }
+  #info-creature { grid-area: creature; display: none; }
   #info-creature img {
     width: 100%; display: block; border: 1.5px solid var(--border);
   }
   #info-creature-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
-  #info-approx {
-    font-size: 10.5px; line-height: 1.5; color: var(--ink3); font-style: italic;
-    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px; margin-bottom: 10px; display: none;
+  #info-credit-illustration { font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.4; margin-top: 6px; }
+  #info-credit-map {
+    grid-area: mapcredit; font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.5;
+    border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px;
   }
-  #info-credit { font-size: 9.5px; color: var(--ink3); opacity: 0.8; border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px; }
-  #info-credit a { color: inherit; }
+  #info-credit-map a { color: inherit; }
 
   /* ── Scrub track ── */
   #scrub-wrap { flex-shrink: 0; padding: 10px 24px 22px; }
-  #era-groups { display: flex; height: 15px; margin-bottom: 2px; gap: 2px; }
-  .era-group {
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3);
-    border-bottom: 2px solid; overflow: hidden; white-space: nowrap;
+  /* Every segment below is sized in JS from its own measured text width, so
+     no era/period label can ever be truncated or collide with its neighbor.
+     That means the full track can exceed the viewport — it scrolls. */
+  #timeline-scroll {
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
   }
-  #period-groups { display: flex; height: 14px; margin-bottom: 4px; gap: 2px; }
+  #timeline-scroll::-webkit-scrollbar { height: 5px; }
+  #timeline-scroll::-webkit-scrollbar-thumb { background: rgba(128,120,100,0.3); border-radius: 3px; }
+  #era-groups { display: flex; height: 15px; margin-bottom: 2px; width: max-content; }
+  .era-group {
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box;
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3);
+    border-bottom: 2px solid; border-right: 1px solid var(--bg); overflow: hidden; white-space: nowrap;
+  }
+  #period-groups { display: flex; height: 14px; margin-bottom: 4px; width: max-content; }
   .period-group {
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box;
     font-size: 8px; letter-spacing: 0.03em; color: var(--ink3);
-    border-bottom: 1.5px solid rgba(128,120,100,0.35); overflow: hidden; white-space: nowrap;
-    cursor: pointer; transition: color 0.15s, border-color 0.15s;
+    border-bottom: 1.5px solid rgba(128,120,100,0.35); border-right: 1px solid var(--bg);
+    overflow: hidden; white-space: nowrap; cursor: pointer; transition: color 0.15s, border-color 0.15s;
   }
   .period-group:hover, .period-group.current { color: var(--ink); border-color: var(--ink2); }
   #scrub-track {
-    position: relative; height: 38px; display: flex; align-items: stretch; gap: 1px;
+    position: relative; height: 38px; display: flex; align-items: stretch; width: max-content;
     cursor: pointer; touch-action: none;
   }
   .tick {
-    flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column;
+    flex: 0 0 auto; box-sizing: border-box; border-right: 1px solid var(--bg);
+    position: relative; display: flex; flex-direction: column;
     align-items: center; justify-content: flex-end;
   }
   .tick-bar { width: 100%; height: 8px; border-radius: 2px; opacity: 0.35; transition: opacity 0.15s, height 0.15s; }
+  .tick-bar.no-map { opacity: 0.18; }
   .tick.current .tick-bar { opacity: 1; height: 16px; }
   #scrub-current-ma {
-    position: absolute; top: -22px; transform: translateX(-50%);
+    /* Anchored to the bar's height (16px when current) + a small gap, not
+       the whole track box — ticks are bottom-aligned, so "top" would leave
+       a large gap above the actual highlighted bar. */
+    position: absolute; bottom: 20px; transform: translateX(-50%);
     font-family: var(--mono); font-size: 10.5px; color: var(--ink); background: var(--card-bg);
     border: 1px solid var(--border); padding: 2px 7px; border-radius: 10px; white-space: nowrap;
     pointer-events: none; transition: left 0.12s ease;
@@ -178,15 +235,27 @@
     header { padding: 12px 16px; }
     h1 { font-size: 18px; }
     #nav-link { font-size: 10px; padding: 5px 10px; }
+    #theme-toggle { width: 52px; height: 28px; border-radius: 14px; }
+    .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
+    .dark .toggle-knob { transform: translateX(24px); }
+    .toggle-sun svg, .toggle-moon svg { width: 14px; height: 14px; }
     #stage { flex-direction: column; padding: 6px 12px; overflow-y: auto; }
     #map-wrap { flex: 0 0 auto; width: 100%; }
-    #map-frame { max-width: none; }
+    /* Stacked layout: map and info panel aren't side by side, so go back
+       to width-driven sizing instead of matching the info panel's height. */
+    #map-frame { height: auto; width: 100%; max-width: none; max-height: none; }
     #info-panel { flex: 1 1 auto; width: 100%; max-height: none; }
     #info-period { font-size: 21px; }
     #info-desc { font-size: 13px; }
+    #info-content.has-image {
+      grid-template-columns: 1fr !important;
+      grid-template-areas: "desc" "eradesc" "creature" "mapcredit" !important;
+    }
     #scrub-wrap { padding: 8px 10px 16px; }
-    .period-group { font-size: 0; }
-    .period-group.current { font-size: 7px; }
+    /* Let a swipe on the track natively pan the (often much wider than the
+       screen) timeline, instead of being eaten by the drag-to-scrub handler. */
+    #scrub-track { touch-action: pan-x; }
+    #hint { display: none; }
   }
 </style>
 </head>
@@ -221,29 +290,32 @@
       <div id="map-frame">
         <img id="map-img" class="map-img" alt="">
         <div id="map-loading">Loading map&hellip;</div>
-        <div id="map-empty">No paleogeographic reconstruction<br>survives this far back</div>
       </div>
     </div>
     <div id="info-panel">
       <div id="info-era"><span id="info-era-dot"></span><span id="info-era-label"></span></div>
       <div id="info-period"></div>
       <div id="info-dates"></div>
-      <p id="info-desc"></p>
-      <div id="info-creature">
-        <img id="info-creature-img" alt="">
-        <div id="info-creature-caption"></div>
+      <div id="info-content">
+        <p id="info-desc"></p>
+        <div id="info-era-desc"><span id="info-era-desc-label"></span><span id="info-era-desc-text"></span></div>
+        <div id="info-creature">
+          <img id="info-creature-img" alt="">
+          <div id="info-creature-caption"></div>
+          <div id="info-credit-illustration"></div>
+        </div>
+        <div id="info-credit-map"></div>
       </div>
-      <div id="info-era-desc"><span id="info-era-desc-label"></span><span id="info-era-desc-text"></span></div>
-      <div id="info-approx"></div>
-      <div id="info-credit"></div>
     </div>
   </div>
 
   <div id="scrub-wrap">
-    <div id="era-groups"></div>
-    <div id="period-groups"></div>
-    <div id="scrub-track">
-      <div id="scrub-current-ma"></div>
+    <div id="timeline-scroll">
+      <div id="era-groups"></div>
+      <div id="period-groups"></div>
+      <div id="scrub-track">
+        <div id="scrub-current-ma"></div>
+      </div>
     </div>
     <div id="hint">Drag, click, or use &larr; &rarr; to scrub through time</div>
   </div>
@@ -337,24 +409,48 @@ function parseCSV(text) {
   return rows.map(r => Object.fromEntries(headers.map((h, j) => [h.trim(), r[j] ?? ''])));
 }
 
+// Most rows describe a period. Eras without any periods (e.g. Hadean,
+// Archean eras) get one row with blank period_* columns — treat the era
+// itself as the timeline unit, labelled with just the era name.
 function rowsToPeriods(rows) {
   const periods = [];
-  const seen = new Set();
+  const seenPeriods = new Set();
+  const seenEras = new Set();
   for (const row of rows) {
-    const name = (row.period_name || '').trim();
-    if (!name || seen.has(name)) continue;
-    seen.add(name);
+    const periodName = (row.period_name || '').trim();
+    if (periodName) {
+      if (seenPeriods.has(periodName)) continue;
+      seenPeriods.add(periodName);
+      periods.push({
+        name: periodName,
+        start: Number(row.period_start),
+        end: Number(row.period_end),
+        desc: (row.period_desc || '').trim(),
+        eraLabel: (row.era_label || '').trim(),
+        eraColor: (row.era_color || '#8a8270').trim(),
+        eraDesc: (row.era_desc || '').trim(),
+        creatureImg: (row.period_img || '').trim(),
+        creatureImgCredit: (row.period_imgCredit || '').trim(),
+        creatureImgDesc: (row.period_imgDesc || '').trim(),
+        eraOnly: false,
+      });
+      continue;
+    }
+    const eraId = (row.era_id || '').trim();
+    if (!eraId || seenEras.has(eraId)) continue;
+    seenEras.add(eraId);
     periods.push({
-      name,
-      start: Number(row.period_start),
-      end: Number(row.period_end),
-      desc: (row.period_desc || '').trim(),
+      name: (row.era_label || '').trim(),
+      start: Number(row.era_start),
+      end: Number(row.era_end),
+      desc: (row.era_desc || '').trim(),
       eraLabel: (row.era_label || '').trim(),
       eraColor: (row.era_color || '#8a8270').trim(),
-      eraDesc: (row.era_desc || '').trim(),
-      creatureImg: (row.period_img || '').trim(),
-      creatureImgCredit: (row.period_imgCredit || '').trim(),
-      creatureImgDesc: (row.period_imgDesc || '').trim(),
+      eraDesc: '',
+      creatureImg: (row.era_img || '').trim(),
+      creatureImgCredit: (row.era_imgCredit || '').trim(),
+      creatureImgDesc: (row.era_imgDesc || '').trim(),
+      eraOnly: true,
     });
   }
   return periods;
@@ -386,10 +482,13 @@ function buildFrames(periods) {
 // ── State & DOM ───────────────────────────────────────────────────
 let periods = [];
 let frames = [];
+let frameWidths = [];  // px width per frame, sized so no label is ever cut off
+let frameOffsets = []; // cumulative left-edge px per frame, length frames.length+1
 let currentIndex = 0;
+const stageEl = document.getElementById('stage');
 const mapImg = document.getElementById('map-img');
 const mapLoading = document.getElementById('map-loading');
-const mapEmpty = document.getElementById('map-empty');
+const timelineScroll = document.getElementById('timeline-scroll');
 const scrubTrack = document.getElementById('scrub-track');
 const eraGroupsEl = document.getElementById('era-groups');
 const periodGroupsEl = document.getElementById('period-groups');
@@ -398,6 +497,7 @@ const infoEraDot = document.getElementById('info-era-dot');
 const infoEraLabel = document.getElementById('info-era-label');
 const infoPeriod = document.getElementById('info-period');
 const infoDates = document.getElementById('info-dates');
+const infoContent = document.getElementById('info-content');
 const infoDesc = document.getElementById('info-desc');
 const infoCreature = document.getElementById('info-creature');
 const infoCreatureImg = document.getElementById('info-creature-img');
@@ -405,42 +505,89 @@ const infoCreatureCaption = document.getElementById('info-creature-caption');
 const infoEraDescWrap = document.getElementById('info-era-desc');
 const infoEraDescLabel = document.getElementById('info-era-desc-label');
 const infoEraDescText = document.getElementById('info-era-desc-text');
-const infoApprox = document.getElementById('info-approx');
-const infoCredit = document.getElementById('info-credit');
+const infoCreditIllustration = document.getElementById('info-credit-illustration');
+const infoCreditMap = document.getElementById('info-credit-map');
+
+// Measure text precisely (accounting for letter-spacing, which canvas
+// ignores) so every era/period segment is sized to fully fit its label —
+// this is what guarantees nothing is ever truncated or overlapping.
+const measureCanvas = document.createElement('canvas').getContext('2d');
+function measureTextWidth(text, fontSizePx, letterSpacingEm) {
+  measureCanvas.font = `${fontSizePx}px 'DM Mono', monospace`;
+  const base = measureCanvas.measureText(text).width;
+  return base + text.length * fontSizePx * letterSpacingEm;
+}
+
+const TICK_MIN_WIDTH = 9;
+const ERA_LABEL_PADDING = 18;
+const PERIOD_LABEL_PADDING = 12;
+
+function runsOf(keyFn) {
+  const runs = [];
+  let i = 0;
+  while (i < frames.length) {
+    const key = keyFn(frames[i]);
+    let span = 1;
+    while (i + span < frames.length && keyFn(frames[i + span]) === key) span++;
+    runs.push({ start: i, span });
+    i += span;
+  }
+  return runs;
+}
+
+// Compute a px width per frame such that every era-group and period-group
+// segment ends up at least as wide as its own label needs — never narrower.
+function computeFrameWidths() {
+  const widths = frames.map(() => TICK_MIN_WIDTH);
+
+  const eraRuns = runsOf(f => f.period.eraLabel);
+  for (const run of eraRuns) {
+    const label = frames[run.start].period.eraLabel.toUpperCase();
+    const need = measureTextWidth(label, 9, 0.08) + ERA_LABEL_PADDING;
+    const perFrame = need / run.span;
+    for (let i = run.start; i < run.start + run.span; i++) widths[i] = Math.max(widths[i], perFrame);
+  }
+
+  const periodRuns = runsOf(f => f.period);
+  for (const run of periodRuns) {
+    const period = frames[run.start].period;
+    if (period.eraOnly) continue; // blank label in this row — no width need
+    const need = measureTextWidth(period.name, 8, 0.03) + PERIOD_LABEL_PADDING;
+    const perFrame = need / run.span;
+    for (let i = run.start; i < run.start + run.span; i++) widths[i] = Math.max(widths[i], perFrame);
+  }
+
+  return widths;
+}
 
 function buildEraGroups() {
   eraGroupsEl.innerHTML = '';
-  let i = 0;
-  while (i < frames.length) {
-    const label = frames[i].period.eraLabel;
-    const color = frames[i].period.eraColor;
-    let span = 1;
-    while (i + span < frames.length && frames[i + span].period.eraLabel === label) span++;
+  for (const run of runsOf(f => f.period.eraLabel)) {
+    const f = frames[run.start];
+    const width = frameWidths.slice(run.start, run.start + run.span).reduce((a, b) => a + b, 0);
     const div = document.createElement('div');
     div.className = 'era-group';
-    div.style.flex = span;
-    div.style.borderColor = color;
-    div.textContent = label;
+    div.style.width = width + 'px';
+    div.style.borderColor = f.period.eraColor;
+    div.textContent = f.period.eraLabel;
     eraGroupsEl.appendChild(div);
-    i += span;
   }
 }
 
 function buildPeriodGroups() {
   periodGroupsEl.innerHTML = '';
-  let i = 0;
-  while (i < frames.length) {
-    const period = frames[i].period;
-    let span = 1;
-    while (i + span < frames.length && frames[i + span].period === period) span++;
+  for (const run of runsOf(f => f.period)) {
+    const period = frames[run.start].period;
+    const width = frameWidths.slice(run.start, run.start + run.span).reduce((a, b) => a + b, 0);
     const div = document.createElement('div');
     div.className = 'period-group';
-    div.dataset.startIndex = i;
-    div.style.flex = span;
-    div.textContent = period.name;
-    div.addEventListener('click', () => renderFrame(Number(div.dataset.startIndex)));
+    div.dataset.startIndex = run.start;
+    div.style.width = width + 'px';
+    // Era-only entries already show their name in the era-groups row above —
+    // don't repeat it here, just leave the segment blank.
+    div.textContent = period.eraOnly ? '' : period.name;
+    div.addEventListener('click', () => renderFrame(run.start));
     periodGroupsEl.appendChild(div);
-    i += span;
   }
 }
 
@@ -450,13 +597,16 @@ function buildTicks() {
     const tick = document.createElement('div');
     tick.className = 'tick';
     tick.dataset.index = idx;
+    tick.style.width = frameWidths[idx] + 'px';
     const bar = document.createElement('div');
-    bar.className = 'tick-bar';
+    bar.className = 'tick-bar' + (f.url ? '' : ' no-map');
     bar.style.background = f.period.eraColor;
-    if (!f.url) bar.style.opacity = '0.18';
     tick.appendChild(bar);
     scrubTrack.appendChild(tick);
   });
+
+  frameOffsets = [0];
+  for (const w of frameWidths) frameOffsets.push(frameOffsets[frameOffsets.length - 1] + w);
 }
 
 const loadedUrls = new Set();
@@ -472,10 +622,10 @@ function renderFrame(idx) {
   const f = frames[currentIndex];
   const p = f.period;
 
-  // Instant map swap — no crossfade
+  // Remove the whole map section when no map is available for this stretch of time
+  stageEl.classList.toggle('no-map', !f.url);
+
   if (f.url) {
-    mapEmpty.classList.remove('visible');
-    mapImg.style.visibility = 'visible';
     if (loadedUrls.has(f.url)) {
       mapLoading.classList.remove('visible');
       mapImg.src = f.url;
@@ -488,13 +638,14 @@ function renderFrame(idx) {
       mapImg.src = f.url;
     }
   } else {
-    mapImg.style.visibility = 'hidden';
     mapImg.removeAttribute('src');
     mapLoading.classList.remove('visible');
-    mapEmpty.classList.add('visible');
   }
 
   // Info panel (period-level content)
+  // Era-only entries (Neoarchean..Early Hadean) already use the era name as
+  // their title, so the era pill above it would just repeat it — skip it.
+  infoEraDot.parentElement.style.display = p.eraOnly ? 'none' : 'flex';
   infoEraDot.style.background = p.eraColor;
   infoEraLabel.textContent = p.eraLabel;
   infoPeriod.textContent = p.name;
@@ -504,13 +655,15 @@ function renderFrame(idx) {
   if (p.creatureImg) {
     infoCreature.style.display = 'block';
     infoCreatureImg.src = p.creatureImg;
-    infoCreatureCaption.textContent = [p.creatureImgDesc, p.creatureImgCredit].filter(Boolean).join(' — ');
+    infoCreatureCaption.textContent = p.creatureImgDesc || '';
   } else {
     infoCreature.style.display = 'none';
     infoCreatureImg.removeAttribute('src');
   }
+  infoContent.classList.toggle('has-image', !!p.creatureImg);
 
-  if (p.eraDesc) {
+  // Era description is only useful when the period itself has no info of its own
+  if (!p.desc && p.eraDesc) {
     infoEraDescWrap.style.display = 'block';
     infoEraDescLabel.textContent = `${p.eraLabel} era — `;
     infoEraDescText.textContent = p.eraDesc;
@@ -518,17 +671,15 @@ function renderFrame(idx) {
     infoEraDescWrap.style.display = 'none';
   }
 
-  if (!f.url) {
-    infoApprox.style.display = 'block';
-    infoApprox.textContent = 'No paleogeographic reconstruction survives this far back — continental positions this deep in the Precambrian are not well constrained.';
-  } else {
-    infoApprox.style.display = 'none';
-  }
-  infoCredit.innerHTML = f.url ? `${MAP_CREDIT} &mdash; map dated ~${f.age}${f.stage ? ' (' + f.stage + ')' : ''}` : '';
+  // Illustration credit sits right under its image; map credit stands alone
+  infoCreditIllustration.textContent = p.creatureImgCredit ? `Illustration: ${p.creatureImgCredit}` : '';
+  infoCreditIllustration.style.display = p.creatureImgCredit ? 'block' : 'none';
+  infoCreditMap.innerHTML = f.url ? `${MAP_CREDIT} &mdash; map dated ~${f.age}${f.stage ? ' (' + f.stage + ')' : ''}` : '';
+  infoCreditMap.style.display = f.url ? 'block' : 'none';
 
   // Ticks, period groups + playhead
   scrubTrack.querySelectorAll('.tick').forEach(t => t.classList.toggle('current', Number(t.dataset.index) === currentIndex));
-  periodGroupsEl.querySelectorAll('.period-group').forEach(g => g.classList.toggle('current', g.textContent === p.name && frames[Number(g.dataset.startIndex)].period === p));
+  periodGroupsEl.querySelectorAll('.period-group').forEach(g => g.classList.toggle('current', frames[Number(g.dataset.startIndex)].period === p));
   positionPlayhead();
 
   // Preload neighboring maps
@@ -548,10 +699,25 @@ function positionPlayhead() {
 }
 
 // ── Scrub interaction ─────────────────────────────────────────────
+// Frames have unequal widths (each sized to fit its label), so pointer
+// position maps to a frame via the cumulative offsets, not a plain ratio.
 function indexFromPointerX(clientX) {
   const rect = scrubTrack.getBoundingClientRect();
-  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  return Math.round(ratio * (frames.length - 1));
+  const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+  let lo = 0, hi = frames.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (frameOffsets[mid + 1] <= x) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+// Keyboard/click navigation can jump beyond the visible scroll area — nudge
+// the timeline so the current frame is always on screen.
+function scrollFrameIntoView(idx) {
+  const tick = scrubTrack.querySelector(`.tick[data-index="${idx}"]`);
+  if (!tick) return;
+  tick.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 }
 
 let dragging = false;
@@ -568,10 +734,10 @@ scrubTrack.addEventListener('pointerup', () => { dragging = false; });
 scrubTrack.addEventListener('pointercancel', () => { dragging = false; });
 
 window.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') { renderFrame(currentIndex + 1); e.preventDefault(); }
-  else if (e.key === 'ArrowLeft') { renderFrame(currentIndex - 1); e.preventDefault(); }
-  else if (e.key === 'Home') { renderFrame(0); e.preventDefault(); }
-  else if (e.key === 'End') { renderFrame(frames.length - 1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { renderFrame(currentIndex + 1); scrollFrameIntoView(currentIndex); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { renderFrame(currentIndex - 1); scrollFrameIntoView(currentIndex); e.preventDefault(); }
+  else if (e.key === 'Home') { renderFrame(0); scrollFrameIntoView(0); e.preventDefault(); }
+  else if (e.key === 'End') { renderFrame(frames.length - 1); scrollFrameIntoView(frames.length - 1); e.preventDefault(); }
 });
 
 window.addEventListener('resize', positionPlayhead);
@@ -587,6 +753,7 @@ async function init() {
   if (!res.ok) throw new Error('Failed to load ' + TIMELINE_DATA_URL + ' (' + res.status + ')');
   periods = rowsToPeriods(parseCSV(await res.text()));
   frames = buildFrames(periods);
+  frameWidths = computeFrameWidths();
   buildEraGroups();
   buildPeriodGroups();
   buildTicks();
