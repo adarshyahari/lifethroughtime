@@ -6,7 +6,10 @@
 <title>Life Through Time — Map</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+  *, *::before, *::after {
+    box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
   :root {
     --bg: #f5f0e8;
     --ink: #1a1710;
@@ -853,16 +856,18 @@ function setupHoldRepeat(el, delta) {
 setupHoldRepeat(tlPrevBtn, -1);
 setupHoldRepeat(tlNextBtn, 1);
 
+// On mobile, navigation is via the prev/next buttons and scroll-syncing to
+// the center pointer only — tapping/dragging the tick bars directly is
+// disabled there (desktop keeps click-and-drag-to-scrub).
 let dragging = false;
 scrubTrack.addEventListener('pointerdown', e => {
+  if (isMobileLayout()) return;
   dragging = true;
   scrubTrack.setPointerCapture(e.pointerId);
-  const idx = indexFromPointerX(e.clientX);
-  renderFrame(idx);
-  if (isMobileLayout()) centerFrameUnderPointer(idx, true);
+  renderFrame(indexFromPointerX(e.clientX));
 });
 scrubTrack.addEventListener('pointermove', e => {
-  if (!dragging) return;
+  if (!dragging || isMobileLayout()) return;
   renderFrame(indexFromPointerX(e.clientX));
 });
 scrubTrack.addEventListener('pointerup', () => { dragging = false; });
