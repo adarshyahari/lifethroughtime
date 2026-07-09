@@ -105,7 +105,7 @@
     font-size: 15px;
     font-weight: 400;
     line-height: 1.5;
-    color: var(--ink2);
+    color: var(--ink3);
     margin-bottom: 10px;
   }
   .help-intro {
@@ -143,7 +143,7 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--ink2);
+    color: var(--ink3);
     padding: 3px 8px;
     background: rgba(128,120,100,0.08);
     border-radius: 3px;
@@ -247,12 +247,21 @@
     background: #2a2820;
   }
   .toggle-sun, .toggle-moon {
-    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
     transition: color 0.3s, opacity 0.3s;
     z-index: 1;
     pointer-events: none;
     width: 22px;
+    height: 22px;
+    color: inherit;
+  }
+  .toggle-sun svg, .toggle-moon svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
   }
   .toggle-sun  { color: #e8a020; opacity: 1; }
   .toggle-moon { color: #8a8270; opacity: 0.5; }
@@ -712,7 +721,7 @@
     }
     .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
     .dark .toggle-knob { transform: translateX(24px); }
-    .toggle-sun, .toggle-moon { font-size: 16px; width: 16px;}
+    .toggle-sun svg, .toggle-moon svg { width: 14px; height: 14px; }
 
     .legend {
       padding: 8px 16px;
@@ -750,9 +759,21 @@
     <nav id="header-nav" aria-label="Timeline navigation"></nav>
     <div id="header-controls">
       <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-        <span class="toggle-sun">☀</span>
+        <span class="toggle-sun" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path><path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </span>
         <span class="toggle-knob"></span>
-        <span class="toggle-moon">☾</span>
+        <span class="toggle-moon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </span>
       </button>
     </div>
   </header>
@@ -2064,9 +2085,11 @@ function spawnTimelineCardItem(item, xFn, idx, registry, opts = {}) {
       pcard.style.cursor = 'default';
       pnode.style.cursor = 'default';
     }
+    const isNavigable = (allowPeriodZoom && hasEpochs) ||
+      (opts.allowEraZoom && Array.isArray(item.era.periods) && item.era.periods.length > 0);
     if (item.period.img && !hasEpochs) {
-      attachImgTooltipListeners(pcard, item.period);
-      attachImgTooltipListeners(pnode, item.period);
+      attachImgTooltipListeners(pcard, item.period, { navigable: isNavigable });
+      attachImgTooltipListeners(pnode, item.period, { navigable: isNavigable });
     }
 
     canvas.appendChild(pcard);
@@ -2247,9 +2270,10 @@ function buildEraEls(era, idx, evenLayout) {
     card.style.cursor = 'default';
   }
   if (hoverImg) {
-    attachImgTooltipListeners(card, hoverImg);
-    attachImgTooltipListeners(node, hoverImg);
-    attachImgTooltipListeners(bar, hoverImg);
+    const imgOpts = hasPeriods ? { navigable: true } : {};
+    attachImgTooltipListeners(card, hoverImg, imgOpts);
+    attachImgTooltipListeners(node, hoverImg, imgOpts);
+    attachImgTooltipListeners(bar, hoverImg, imgOpts);
   }
   canvas.appendChild(card);
 
@@ -3252,8 +3276,10 @@ function preloadEraImages(era) {
 
 // ── IMAGE TOOLTIP ──────────────────────────────────────────────────
 // On mobile, show tooltip on tap (touchend) instead of hover
-function attachImgTooltipListeners(el, period) {
+function attachImgTooltipListeners(el, period, opts = {}) {
+  const navigable = !!opts.navigable;
   if (IS_MOBILE()) {
+    if (navigable) return;
     el.addEventListener('touchend', e => {
       if (touchMoved) return;
       e.stopPropagation();
