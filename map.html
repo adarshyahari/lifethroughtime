@@ -147,11 +147,11 @@
   #stage.no-map #info-panel { flex: 1 1 auto; width: 100%; }
   #stage.no-map #info-content.has-image {
     grid-template-columns: 1fr 350px;
-    grid-template-areas: "desc creature" "eradesc creature" "mapcredit creature";
+    grid-template-areas: "desc creature" "facts creature" "mapcredit creature";
   }
   #stage.no-map #info-content:not(.has-image) {
     grid-template-columns: 1fr;
-    grid-template-areas: "desc" "eradesc" "mapcredit";
+    grid-template-areas: "desc" "facts" "mapcredit";
   }
 
   /* ── Info panel ── */
@@ -170,14 +170,18 @@
   #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
   #info-content {
     display: grid; grid-template-columns: 1fr; row-gap: 14px; column-gap: 24px;
-    grid-template-areas: "desc" "eradesc" "creature" "mapcredit";
+    grid-template-areas: "desc" "facts" "creature" "mapcredit";
   }
   #info-desc { grid-area: desc; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink2); }
-  #info-era-desc {
-    grid-area: eradesc; font-size: 12.5px; line-height: 1.55; color: var(--ink3);
+  #info-facts {
+    grid-area: facts; list-style: none; display: flex; flex-direction: column; gap: 9px;
+    font-size: 12.5px; line-height: 1.5; color: var(--ink2);
     border-top: 1px solid rgba(128,120,100,0.2); padding-top: 12px;
   }
-  #info-era-desc-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block; margin-bottom: 4px; color: var(--ink3); }
+  .info-facts-label {
+    text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block;
+    margin-bottom: 2px; color: var(--ink3);
+  }
   #info-creature { grid-area: creature; display: none; }
   #info-creature img {
     width: 100%; max-width: 350px; display: block; border: 1.5px solid var(--border);
@@ -280,7 +284,7 @@
     #info-desc { font-size: 13px; }
     #info-content.has-image {
       grid-template-columns: 1fr !important;
-      grid-template-areas: "desc" "eradesc" "creature" "mapcredit" !important;
+      grid-template-areas: "desc" "facts" "creature" "mapcredit" !important;
     }
     /* Extra bottom padding clears the home-indicator / gesture-nav bar area
        on devices that report a safe-area inset (falls back to 16px otherwise). */
@@ -333,7 +337,12 @@
       <div id="info-dates"></div>
       <div id="info-content">
         <p id="info-desc"></p>
-        <div id="info-era-desc"><span id="info-era-desc-label"></span><span id="info-era-desc-text"></span></div>
+        <ul id="info-facts">
+          <li><span class="info-facts-label">Flora &amp; fauna</span><span id="info-fact-flora"></span></li>
+          <li><span class="info-facts-label">Atmosphere</span><span id="info-fact-atmo"></span></li>
+          <li><span class="info-facts-label">Temperature</span><span id="info-fact-temp"></span></li>
+          <li><span class="info-facts-label">Earth structure</span><span id="info-fact-earth"></span></li>
+        </ul>
         <div id="info-creature">
           <img id="info-creature-img" alt="">
           <div id="info-creature-caption"></div>
@@ -476,7 +485,10 @@ function rowsToPeriods(rows) {
         desc: (row.period_desc || '').trim(),
         eraLabel: (row.era_label || '').trim(),
         eraColor: (row.era_color || '#8a8270').trim(),
-        eraDesc: (row.era_desc || '').trim(),
+        flora: (row.period_flora || '').trim(),
+        atmo: (row.period_atmo || '').trim(),
+        temp: (row.period_temp || '').trim(),
+        earth: (row.period_earth || '').trim(),
         creatureImg: (row.period_img || '').trim(),
         creatureImgCredit: (row.period_imgCredit || '').trim(),
         creatureImgDesc: (row.period_imgDesc || '').trim(),
@@ -494,7 +506,10 @@ function rowsToPeriods(rows) {
       desc: (row.era_desc || '').trim(),
       eraLabel: (row.era_label || '').trim(),
       eraColor: (row.era_color || '#8a8270').trim(),
-      eraDesc: '',
+      flora: (row.era_flora || '').trim(),
+      atmo: (row.era_atmo || '').trim(),
+      temp: (row.era_temp || '').trim(),
+      earth: (row.era_earth || '').trim(),
       creatureImg: (row.era_img || '').trim(),
       creatureImgCredit: (row.era_imgCredit || '').trim(),
       creatureImgDesc: (row.era_imgDesc || '').trim(),
@@ -556,9 +571,10 @@ const infoDesc = document.getElementById('info-desc');
 const infoCreature = document.getElementById('info-creature');
 const infoCreatureImg = document.getElementById('info-creature-img');
 const infoCreatureCaption = document.getElementById('info-creature-caption');
-const infoEraDescWrap = document.getElementById('info-era-desc');
-const infoEraDescLabel = document.getElementById('info-era-desc-label');
-const infoEraDescText = document.getElementById('info-era-desc-text');
+const infoFactFlora = document.getElementById('info-fact-flora');
+const infoFactAtmo = document.getElementById('info-fact-atmo');
+const infoFactTemp = document.getElementById('info-fact-temp');
+const infoFactEarth = document.getElementById('info-fact-earth');
 const infoCreditIllustration = document.getElementById('info-credit-illustration');
 const infoCreditMap = document.getElementById('info-credit-map');
 
@@ -718,14 +734,10 @@ function renderFrame(idx) {
   }
   infoContent.classList.toggle('has-image', !!p.creatureImg);
 
-  // Era description is only useful when the period itself has no info of its own
-  if (!p.desc && p.eraDesc) {
-    infoEraDescWrap.style.display = 'block';
-    infoEraDescLabel.textContent = `${p.eraLabel} era — `;
-    infoEraDescText.textContent = p.eraDesc;
-  } else {
-    infoEraDescWrap.style.display = 'none';
-  }
+  infoFactFlora.textContent = p.flora;
+  infoFactAtmo.textContent = p.atmo;
+  infoFactTemp.textContent = p.temp;
+  infoFactEarth.textContent = p.earth;
 
   // Illustration credit sits right under its image; map credit stands alone
   infoCreditIllustration.textContent = p.creatureImgCredit ? `Illustration: ${p.creatureImgCredit}` : '';
