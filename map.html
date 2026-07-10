@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Life Through Time — Map</title>
+<script>
+  (function () {
+    var t = localStorage.getItem('theme');
+    if (t === 'light') document.documentElement.classList.remove('dark');
+    else if (t === 'dark') document.documentElement.classList.add('dark');
+  })();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after {
@@ -47,8 +54,10 @@
 
   /* ── Header ── */
   header {
-    display: flex; align-items: center; gap: 16px;
-    padding: 16px 24px; flex-shrink: 0;
+    padding: 16px 24px;
+    flex-shrink: 0; display: flex; align-items: center; gap: 20px;
+    min-height: 72px;
+    box-sizing: border-box;
   }
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(20px,3vw,24px); letter-spacing: -0.02em; line-height: 1; }
   h1 em { font-style: italic; color: var(--ink2); }
@@ -155,30 +164,25 @@
   }
 
   #theme-toggle {
-    width: 64px; height: 36px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
     background: #e0dbd0;
-    border-radius: 18px;
-    border: none; cursor: pointer;
-    position: relative;
+    color: var(--ink3);
+    cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.3s;
-    display: flex; align-items: center;
-    padding: 0 6px;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
-  .dark #theme-toggle {
-    background: #2a2820;
-  }
+  .dark #theme-toggle { background: #2a2820; color: var(--ink3); }
+  #theme-toggle:hover { color: var(--ink2); border-color: rgba(128,120,100,0.25); }
   .toggle-sun, .toggle-moon {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    transition: color 0.3s, opacity 0.3s;
-    z-index: 1;
-    pointer-events: none;
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     color: inherit;
   }
   .toggle-sun svg, .toggle-moon svg {
@@ -186,24 +190,10 @@
     height: 16px;
     stroke: currentColor;
   }
-  .toggle-sun  { color: #e8a020; opacity: 1; }
-  .toggle-moon { color: #8a8270; opacity: 0.5; }
-  .dark .toggle-sun  { color: #8a8270; opacity: 0.5; }
-  .dark .toggle-moon { color: #e8a020; opacity: 1; }
-  .toggle-knob {
-    position: absolute;
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-    top: 4px; left: 4px;
-    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s;
-    pointer-events: none;
-  }
-  .dark .toggle-knob {
-    transform: translateX(28px);
-    background: #3a3830;
-  }
+  /* Light mode: show the moon (click to go dark). Dark mode: show the sun (click to go light). */
+  .toggle-moon { display: flex; }
+  .dark .toggle-sun { display: flex; }
+  .dark .toggle-moon { display: none; }
 
   /* ── Stage ── */
   #stage {
@@ -364,13 +354,12 @@
   }
 
   @media (max-width: 900px) {
-    header { padding: 12px 16px; }
+    header { padding: 10px 16px; gap: 4px; flex-wrap: wrap; align-items: center; min-height: 68px; }
     h1 { font-size: 18px; }
+    .header-title { flex: 1; min-width: 0; gap: 8px; }
     #nav-link { font-size: 10px; padding: 5px 10px; }
-    #theme-toggle { width: 52px; height: 28px; border-radius: 14px; padding: 0 5px; }
-    .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
-    .dark .toggle-knob { transform: translateX(24px); }
-    .toggle-sun, .toggle-moon { width: 16px; height: 16px; }
+    #theme-toggle { margin-left: 0; width: 26px; height: 26px; }
+    #header-controls { margin-left: auto; gap: 8px; }
     .toggle-sun svg, .toggle-moon svg { width: 14px; height: 14px; }
     #stage { flex-direction: column; padding: 6px 12px; overflow-y: auto; }
     #map-wrap { flex: 0 0 auto; width: 100%; }
@@ -435,7 +424,7 @@
       </div>
     </div>
     <div id="header-controls">
-      <a id="nav-link" href="index.html">Card view</a>
+      <a id="nav-link" href="index.html">Timeline view</a>
       <button id="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle dark mode">
         <span class="toggle-sun" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -446,7 +435,6 @@
             <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
           </svg>
         </span>
-        <span class="toggle-knob"></span>
         <span class="toggle-moon" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
@@ -1198,6 +1186,7 @@ mobileMedia.addEventListener('change', handleViewportChange);
 // ── Theme toggle ──────────────────────────────────────────────────
 function toggleTheme() {
   document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
 }
 
 // ── Help card ─────────────────────────────────────────────────────
