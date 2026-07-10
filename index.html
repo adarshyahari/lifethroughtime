@@ -293,13 +293,12 @@
   #theme-toggle-label { display: none; }
 
   header {
-    padding: 26px 60px 16px;
-    border-bottom: 1px solid rgba(128,120,100,0.15);
+    padding: 16px 24px;
     flex-shrink: 0; display: flex; align-items: center; gap: 20px;
     min-height: 72px;
     box-sizing: border-box;
   }
-  header h1 { font-family: var(--serif); font-size: clamp(20px,3vw,34px); font-weight: 400; letter-spacing: -0.02em; line-height: 1; }
+  header h1 { font-family: var(--serif); font-size: clamp(20px,3vw,24px); font-weight: 400; letter-spacing: -0.02em; line-height: 1; }
   header h1 em { font-style: italic; color: var(--ink2); }
   #header-nav {
     display: flex; align-items: center; gap: 6px 20px;
@@ -676,7 +675,7 @@
       gap: 4px 14px; flex-wrap: wrap;
       font-size: 10px; letter-spacing: 0.05em;
     }
-    #theme-toggle { margin-left: 0; order: 2; width: 52px; height: 28px; border-radius: 14px; }
+    #theme-toggle { margin-left: 0; order: 2; width: 52px; height: 28px; border-radius: 14px; padding: 0 5px; }
     #header-controls { order: 2; margin-left: auto; gap: 8px; }
     #help-btn { width: 26px; height: 26px; font-size: 13px; }
     #help-overlay { display: block; }
@@ -730,6 +729,7 @@
     }
     .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
     .dark .toggle-knob { transform: translateX(24px); }
+    .toggle-sun, .toggle-moon { width: 16px; height: 16px; }
     .toggle-sun svg, .toggle-moon svg { width: 14px; height: 14px; }
 
     .legend {
@@ -1496,7 +1496,7 @@ function eraFromRow(row) {
     end: dataNum(row.era_end),
   };
   if (dataStr(row.era_eon)) era.eon = dataStr(row.era_eon);
-  if (dataStr(row.era_desc)) era.desc = dataStr(row.era_desc);
+  if (dataStr(row.era_desc_short)) era.desc = dataStr(row.era_desc_short);
   if (dataStr(row.era_color)) era.color = dataStr(row.era_color);
   if (dataStr(row.era_colorLight)) era.colorLight = dataStr(row.era_colorLight);
   const above = dataBool(row.era_above);
@@ -1523,7 +1523,7 @@ function rowsToEras(rows) {
     let period = era.periods.find(p => p.name === periodName);
     if (!period) {
       period = { name: periodName, start: dataNum(row.period_start), end: dataNum(row.period_end) };
-      if (dataStr(row.period_desc)) period.desc = dataStr(row.period_desc);
+      if (dataStr(row.period_desc_short)) period.desc = dataStr(row.period_desc_short);
       if (dataStr(row.period_img)) period.img = dataStr(row.period_img);
       if (dataStr(row.period_imgCredit)) period.imgCredit = dataStr(row.period_imgCredit);
       if (dataStr(row.period_imgDesc)) period.imgDesc = dataStr(row.period_imgDesc);
@@ -1534,7 +1534,7 @@ function rowsToEras(rows) {
     period.epochs = period.epochs || [];
     if (!period.epochs.some(e => e.name === epochName)) {
       const epoch = { name: epochName, start: dataNum(row.epoch_start), end: dataNum(row.epoch_end) };
-      if (dataStr(row.epoch_desc)) epoch.desc = dataStr(row.epoch_desc);
+      if (dataStr(row.epoch_desc_short)) epoch.desc = dataStr(row.epoch_desc_short);
       if (dataStr(row.epoch_img)) epoch.img = dataStr(row.epoch_img);
       if (dataStr(row.epoch_imgCredit)) epoch.imgCredit = dataStr(row.epoch_imgCredit);
       if (dataStr(row.epoch_imgDesc)) epoch.imgDesc = dataStr(row.epoch_imgDesc);

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Life Through Time — Map</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after {
     box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none;
@@ -18,6 +18,7 @@
     --card-bg: #ffffff;
     --border: #1a1710;
     --serif: 'Playfair Display', Georgia, serif;
+    --body-serif: 'Source Serif 4', Georgia, serif;
     --mono: 'DM Mono', monospace;
   }
   .dark {
@@ -49,16 +50,109 @@
     display: flex; align-items: center; gap: 16px;
     padding: 16px 24px; flex-shrink: 0;
   }
-  h1 { font-family: var(--serif); font-weight: 400; font-size: 22px; letter-spacing: 0.01em; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(20px,3vw,24px); letter-spacing: -0.02em; line-height: 1; }
   h1 em { font-style: italic; color: var(--ink2); }
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  #help-wrap { position: relative; flex-shrink: 0; }
+  #help-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: #e0dbd0;
+    color: var(--ink3);
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .dark #help-btn { background: #2a2820; color: var(--ink3); }
+  #help-btn:hover, #help-btn[aria-expanded="true"] {
+    color: var(--ink2);
+    border-color: rgba(128,120,100,0.25);
+  }
   #nav-link {
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--ink2); text-decoration: none; border: 1px solid rgba(128,120,100,0.3);
-    padding: 6px 12px; border-radius: 20px; transition: color 0.15s, border-color 0.15s;
+    color: var(--ink3); text-decoration: none; border: 1.5px solid transparent;
+    background: #e0dbd0; padding: 7px 12px; border-radius: 16px; flex-shrink: 0;
     white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
-  #nav-link:hover { color: var(--ink); border-color: var(--ink2); }
+  .dark #nav-link { background: #2a2820; }
+  #nav-link:hover { color: var(--ink2); border-color: rgba(128,120,100,0.25); }
   #header-controls { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  #help-card {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(360px, calc(100vw - 32px));
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    box-shadow: 6px 6px 0 rgba(128,120,100,0.12);
+    padding: 22px 24px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 500;
+    text-align: left;
+  }
+  #help-card.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  #help-card .help-lede {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--ink2);
+    margin-bottom: 10px;
+  }
+  #help-card .help-section {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink2);
+    margin-bottom: 12px;
+  }
+  #help-card .help-section:last-child { margin-bottom: 0; }
+  #help-card .help-section strong {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .help-sheet-handle { display: none; }
+  #help-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 450;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #help-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   #theme-toggle {
     width: 64px; height: 36px;
@@ -147,11 +241,11 @@
   #stage.no-map #info-panel { flex: 1 1 auto; width: 100%; }
   #stage.no-map #info-content.has-image {
     grid-template-columns: 1fr 350px;
-    grid-template-areas: "desc creature" "facts creature" "mapcredit creature";
+    grid-template-areas: "desc creature" "facts creature" "credits credits";
   }
   #stage.no-map #info-content:not(.has-image) {
     grid-template-columns: 1fr;
-    grid-template-areas: "desc" "facts" "mapcredit";
+    grid-template-areas: "desc" "facts" "credits";
   }
 
   /* ── Info panel ── */
@@ -162,18 +256,20 @@
     padding: 20px 22px; overflow-y: auto;
   }
   #info-era {
-    display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink3); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--ink3); margin-bottom: 6px;
   }
   #info-era-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  #info-period-sub { display: none; font-size: 12px; color: var(--ink3); letter-spacing: 0.02em; margin-bottom: 2px; }
   #info-period { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
   #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
   #info-content {
     display: grid; grid-template-columns: 1fr; row-gap: 14px; column-gap: 24px;
-    grid-template-areas: "desc" "facts" "creature" "mapcredit";
+    grid-template-areas: "desc" "creature" "facts" "credits";
   }
-  #info-desc { grid-area: desc; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink2); }
+  #info-desc {
+    grid-area: desc; font-family: var(--body-serif); font-weight: 400; font-size: 15px; line-height: 1.6;
+    color: var(--ink); opacity: 0.92;
+  }
   #info-facts {
     grid-area: facts; list-style: none; display: flex; flex-direction: column; gap: 9px;
     font-size: 12.5px; line-height: 1.5; color: var(--ink2);
@@ -188,12 +284,12 @@
     width: 100%; max-width: 350px; display: block; border: 1.5px solid var(--border);
   }
   #info-creature-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
-  #info-credit-illustration { font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.4; margin-top: 6px; }
-  #info-credit-map {
-    grid-area: mapcredit; font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.5;
+  #info-credits {
+    grid-area: credits; font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.5;
     border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px;
+    display: flex; flex-direction: column; gap: 4px;
   }
-  #info-credit-map a { color: inherit; }
+  #info-credits a { color: inherit; }
 
   /* ── Scrub track ── */
   #scrub-wrap { flex-shrink: 0; padding: 10px 24px 22px; }
@@ -271,9 +367,10 @@
     header { padding: 12px 16px; }
     h1 { font-size: 18px; }
     #nav-link { font-size: 10px; padding: 5px 10px; }
-    #theme-toggle { width: 52px; height: 28px; border-radius: 14px; }
+    #theme-toggle { width: 52px; height: 28px; border-radius: 14px; padding: 0 5px; }
     .toggle-knob { width: 22px; height: 22px; top: 3px; left: 3px; }
     .dark .toggle-knob { transform: translateX(24px); }
+    .toggle-sun, .toggle-moon { width: 16px; height: 16px; }
     .toggle-sun svg, .toggle-moon svg { width: 14px; height: 14px; }
     #stage { flex-direction: column; padding: 6px 12px; overflow-y: auto; }
     #map-wrap { flex: 0 0 auto; width: 100%; }
@@ -282,10 +379,10 @@
     #map-frame { height: auto; width: 100%; max-width: none; max-height: none; }
     #info-panel { flex: 1 1 auto; width: 100%; max-height: none; }
     #info-period { font-size: 21px; }
-    #info-desc { font-size: 13px; }
+    #info-desc { font-size: 15.5px; line-height: 1.65; }
     #info-content.has-image {
       grid-template-columns: 1fr !important;
-      grid-template-areas: "desc" "facts" "creature" "mapcredit" !important;
+      grid-template-areas: "desc" "creature" "facts" "credits" !important;
     }
     /* Extra bottom padding clears the home-indicator / gesture-nav bar area
        on devices that report a safe-area inset (falls back to 16px otherwise). */
@@ -296,15 +393,49 @@
     #hint { display: none; }
     .tl-nav-btn { display: flex; }
     #timeline-pointer { display: block; }
+
+    #help-btn { width: 26px; height: 26px; font-size: 13px; }
+    #help-overlay { display: block; }
+    #help-card {
+      position: fixed;
+      left: 50%;
+      top: auto;
+      bottom: 0;
+      width: calc(100% - 32px);
+      max-width: 400px;
+      max-height: min(85vh, 720px);
+      padding: 20px 20px 24px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px 12px 0 0;
+      border-bottom: none;
+      box-shadow: none;
+      z-index: 500;
+      opacity: 1;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), visibility 0.35s;
+    }
+    #help-card.visible {
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
   }
 </style>
 </head>
 <body>
 <div class="page">
   <header>
-    <h1>Life <em>Through</em> Time</h1>
-    <a id="nav-link" href="index.html">&larr; Card view</a>
+    <div class="header-title">
+      <h1>Life <em>Through</em> Time</h1>
+      <div id="help-wrap">
+        <button id="help-btn" type="button" aria-label="About this map" aria-expanded="false" aria-controls="help-card">?</button>
+      </div>
+    </div>
     <div id="header-controls">
+      <a id="nav-link" href="index.html">Card view</a>
       <button id="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle dark mode">
         <span class="toggle-sun" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -324,6 +455,21 @@
       </button>
     </div>
   </header>
+  <div id="help-overlay"></div>
+  <div id="help-card" role="dialog" aria-hidden="true" aria-labelledby="help-card-title">
+    <div class="help-sheet-handle" aria-hidden="true"></div>
+    <div class="help-sheet-scroll">
+      <p class="help-lede" id="help-card-title">A frame-by-frame journey through Earth's paleogeography — scrub through time to see the continents drift and life change alongside them.</p>
+      <div class="help-section">
+        <strong>Navigate</strong>
+        Drag or click the timeline at the bottom to jump to any point in time, or use the &larr; &rarr; arrow keys. On mobile, use the prev/next buttons to step through epochs.
+      </div>
+      <div class="help-section">
+        <strong>Map</strong>
+        Each frame shows a paleogeographic reconstruction of the continents at that point in time, alongside details about the life, atmosphere, and climate of the era.
+      </div>
+    </div>
+  </div>
 
   <div id="stage">
     <div id="map-wrap">
@@ -334,30 +480,31 @@
     </div>
     <div id="info-panel">
       <div id="info-era"><span id="info-era-dot"></span><span id="info-era-label"></span></div>
-      <div id="info-period-sub"></div>
       <div id="info-period"></div>
       <div id="info-dates"></div>
       <div id="info-content">
         <p id="info-desc"></p>
+        <div id="info-creature">
+          <img id="info-creature-img" alt="">
+          <div id="info-creature-caption"></div>
+        </div>
         <ul id="info-facts">
           <li><span class="info-facts-label">Flora &amp; fauna</span><span id="info-fact-flora"></span></li>
           <li><span class="info-facts-label">Atmosphere</span><span id="info-fact-atmo"></span></li>
           <li><span class="info-facts-label">Temperature</span><span id="info-fact-temp"></span></li>
           <li><span class="info-facts-label">Earth structure</span><span id="info-fact-earth"></span></li>
         </ul>
-        <div id="info-creature">
-          <img id="info-creature-img" alt="">
-          <div id="info-creature-caption"></div>
+        <div id="info-credits">
           <div id="info-credit-illustration"></div>
+          <div id="info-credit-map"></div>
         </div>
-        <div id="info-credit-map"></div>
       </div>
     </div>
   </div>
 
   <div id="scrub-wrap">
     <div id="scrub-row">
-      <button id="tl-prev" class="tl-nav-btn" type="button" aria-label="Previous period">
+      <button id="tl-prev" class="tl-nav-btn" type="button" aria-label="Previous">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <div id="timeline-viewport">
@@ -372,7 +519,7 @@
         </div>
         <div id="timeline-pointer"></div>
       </div>
-      <button id="tl-next" class="tl-nav-btn" type="button" aria-label="Next period">
+      <button id="tl-next" class="tl-nav-btn" type="button" aria-label="Next">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </div>
@@ -702,7 +849,6 @@ const periodGroupsEl = document.getElementById('period-groups');
 const currentMaEl = document.getElementById('scrub-current-ma');
 const infoEraDot = document.getElementById('info-era-dot');
 const infoEraLabel = document.getElementById('info-era-label');
-const infoPeriodSub = document.getElementById('info-period-sub');
 const infoPeriod = document.getElementById('info-period');
 const infoDates = document.getElementById('info-dates');
 const infoContent = document.getElementById('info-content');
@@ -861,15 +1007,13 @@ function renderFrame(idx) {
   const content = e || p;
 
   // Era-only entries (Neoarchean..Early Hadean) already use the era name as
-  // their title, so the era pill above it would just repeat it — skip it.
+  // their title, so the breadcrumb above it would just repeat it — skip it.
   infoEraDot.parentElement.style.display = p.eraOnly ? 'none' : 'flex';
   infoEraDot.style.background = p.eraColor;
-  infoEraLabel.textContent = p.eraLabel;
-  // When showing epoch-level content, the period name becomes a small
-  // breadcrumb above the (now epoch-named) title so context isn't lost.
-  infoPeriodSub.textContent = e ? p.name : '';
-  infoPeriodSub.style.display = e ? 'block' : 'none';
-  infoPeriod.textContent = content.name;
+  infoEraLabel.textContent = e ? `${p.eraLabel} Era · ${p.name} Period` : `${p.eraLabel} Era`;
+  // Title always carries its geologic rank (Epoch/Period/Era).
+  const rank = e ? 'Epoch' : (p.eraOnly ? 'Era' : 'Period');
+  infoPeriod.textContent = `${content.name} ${rank}`;
   infoDates.textContent = `${content.start}–${content.end} million years ago`;
   infoDesc.textContent = content.desc;
 
@@ -899,9 +1043,16 @@ function renderFrame(idx) {
   periodGroupsEl.querySelectorAll('.period-group').forEach(g => g.classList.toggle('current', frames[Number(g.dataset.startIndex)].period === p));
   positionPlayhead();
 
-  // Preload neighboring maps
+  // Preload neighboring maps and creature images
   preload(frames[currentIndex - 1] && frames[currentIndex - 1].url);
   preload(frames[currentIndex + 1] && frames[currentIndex + 1].url);
+  preload(frameCreatureImg(frames[currentIndex - 1]));
+  preload(frameCreatureImg(frames[currentIndex + 1]));
+}
+
+function frameCreatureImg(f) {
+  if (!f) return null;
+  return (f.epoch || f.period).creatureImg || null;
 }
 
 function positionPlayhead() {
@@ -983,23 +1134,14 @@ function onTimelineScroll() {
 }
 timelineScroll.addEventListener('scroll', onTimelineScroll, { passive: true });
 
-// Mobile prev/next buttons jump by whole period, not by sub-stage frame.
-function currentPeriodPos() {
-  let pos = 0;
-  for (let i = 0; i < periodStartIndices.length; i++) {
-    if (periodStartIndices[i] <= currentIndex) pos = i; else break;
-  }
-  return pos;
+// Mobile prev/next buttons step one frame (epoch) at a time.
+function goToAdjacentFrame(delta) {
+  activateFrame(currentIndex + delta, true);
 }
-function goToAdjacentPeriod(delta) {
-  const pos = currentPeriodPos();
-  const newPos = Math.max(0, Math.min(periodStartIndices.length - 1, pos + delta));
-  activateFrame(periodStartIndices[newPos], true);
-}
-// Tap = one period; press-and-hold = repeat quickly until released.
+// Tap = one frame; press-and-hold = repeat quickly until released.
 function setupHoldRepeat(el, delta) {
   let repeatTimeout = null, repeatInterval = null;
-  const step = () => goToAdjacentPeriod(delta);
+  const step = () => goToAdjacentFrame(delta);
   const start = e => {
     e.preventDefault();
     step();
@@ -1058,6 +1200,72 @@ function toggleTheme() {
   document.documentElement.classList.toggle('dark');
 }
 
+// ── Help card ─────────────────────────────────────────────────────
+(function initHelpCard() {
+  const helpWrap = document.getElementById('help-wrap');
+  const helpBtn = document.getElementById('help-btn');
+  const helpCard = document.getElementById('help-card');
+  const helpOverlay = document.getElementById('help-overlay');
+
+  function setHelpOpen(open) {
+    if (!isMobileLayout()) return;
+    helpCard.classList.toggle('visible', open);
+    helpBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    helpCard.setAttribute('aria-hidden', open ? 'false' : 'true');
+    helpOverlay.classList.toggle('visible', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  helpBtn.addEventListener('click', e => {
+    if (!isMobileLayout()) return;
+    e.stopPropagation();
+    setHelpOpen(!helpCard.classList.contains('visible'));
+  });
+  helpOverlay.addEventListener('click', () => setHelpOpen(false));
+  helpOverlay.addEventListener('touchend', e => { e.preventDefault(); setHelpOpen(false); });
+
+  function positionHelpCardDesktop() {
+    const rect = helpBtn.getBoundingClientRect();
+    helpCard.style.left = Math.max(16, rect.left) + 'px';
+    helpCard.style.top = (rect.bottom + 10) + 'px';
+  }
+
+  let desktopHideTimer = null;
+  function showDesktopHelp() {
+    if (isMobileLayout()) return;
+    clearTimeout(desktopHideTimer);
+    positionHelpCardDesktop();
+    helpCard.classList.add('visible');
+    helpCard.style.opacity = '1';
+    helpCard.style.visibility = 'visible';
+    helpCard.style.pointerEvents = 'auto';
+    helpCard.style.transform = 'translateY(0)';
+  }
+  function hideDesktopHelp() {
+    if (isMobileLayout()) return;
+    helpCard.classList.remove('visible');
+    helpCard.style.opacity = '';
+    helpCard.style.visibility = '';
+    helpCard.style.pointerEvents = '';
+    helpCard.style.transform = '';
+  }
+  function scheduleHideDesktopHelp() {
+    clearTimeout(desktopHideTimer);
+    desktopHideTimer = setTimeout(hideDesktopHelp, 40);
+  }
+
+  helpWrap.addEventListener('mouseenter', showDesktopHelp);
+  helpWrap.addEventListener('mouseleave', scheduleHideDesktopHelp);
+  helpCard.addEventListener('mouseenter', showDesktopHelp);
+  helpCard.addEventListener('mouseleave', scheduleHideDesktopHelp);
+  helpBtn.addEventListener('focus', showDesktopHelp);
+  helpBtn.addEventListener('blur', scheduleHideDesktopHelp);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && helpCard.classList.contains('visible')) setHelpOpen(false);
+  });
+})();
+
 // ── Init ──────────────────────────────────────────────────────────
 async function init() {
   const res = await fetch(TIMELINE_DATA_URL);
@@ -1072,6 +1280,9 @@ async function init() {
   buildTicks();
   applyMobileCentering();
   renderFrame(0);
+  // Eagerly warm the cache for every creature image (small files, ~50 total)
+  // so switching frames never shows a load delay.
+  frames.forEach(f => preload(frameCreatureImg(f)));
 }
 init().catch(err => {
   infoPeriod.textContent = 'Failed to load timeline data';
