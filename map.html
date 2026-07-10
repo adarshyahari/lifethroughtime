@@ -166,6 +166,7 @@
     text-transform: uppercase; color: var(--ink3); margin-bottom: 8px;
   }
   #info-era-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  #info-period-sub { display: none; font-size: 12px; color: var(--ink3); letter-spacing: 0.02em; margin-bottom: 2px; }
   #info-period { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
   #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
   #info-content {
@@ -333,6 +334,7 @@
     </div>
     <div id="info-panel">
       <div id="info-era"><span id="info-era-dot"></span><span id="info-era-label"></span></div>
+      <div id="info-period-sub"></div>
       <div id="info-period"></div>
       <div id="info-dates"></div>
       <div id="info-content">
@@ -519,6 +521,120 @@ function rowsToPeriods(rows) {
   return periods;
 }
 
+// Collects each period's epochs (young -> old, matching CSV row order) so
+// individual map frames within a period can show epoch-level info instead
+// of repeating the same period-level summary on every frame.
+function rowsToEpochs(rows) {
+  const epochsByPeriod = new Map();
+  for (const row of rows) {
+    const periodName = (row.period_name || '').trim();
+    const epochName = (row.epoch_name || '').trim();
+    if (!periodName || !epochName) continue;
+    if (!epochsByPeriod.has(periodName)) epochsByPeriod.set(periodName, []);
+    epochsByPeriod.get(periodName).push({
+      name: epochName,
+      start: Number(row.epoch_start),
+      end: Number(row.epoch_end),
+      desc: (row.epoch_desc || '').trim(),
+      flora: (row.epoch_flora || '').trim(),
+      atmo: (row.epoch_atmo || '').trim(),
+      temp: (row.epoch_temp || '').trim(),
+      earth: (row.epoch_earth || '').trim(),
+      creatureImg: (row.epoch_img || '').trim(),
+      creatureImgCredit: (row.epoch_imgCredit || '').trim(),
+      creatureImgDesc: (row.epoch_imgDesc || '').trim(),
+    });
+  }
+  return epochsByPeriod;
+}
+
+// Two epochs have no stage map young/old enough to fall in their own narrow
+// range (Holocene, and Silurian's Pridoli) — rather than algorithmically
+// concatenating two unrelated blurbs, these get hand-written unified content.
+const EPOCH_MERGE_OVERRIDES = {
+  'Holocene|Pleistocene': {
+    desc: "Repeated ice ages locked huge volumes of water into continental ice sheets, repeatedly dropping sea levels and exposing land bridges between continents that let animals and eventually humans migrate into new territory. As the ice sheets advanced and retreated in cycles, grasslands and tundra spread across regions that had been forest, favoring large grazing mammals adapted to open, cold landscapes over the browsing species that came before them. Modern humans emerged during this period and, through hunting and later farming, became a new kind of force reshaping which other species could survive alongside them.",
+    flora: "Woolly mammoths, giant ground sloths, cave lions and saber toothed cats roamed alongside early Homo sapiens.",
+    atmo: "Oxygen and CO2 near modern levels, though CO2 dipped lower during glacial peaks.",
+    temp: "Cycled repeatedly between deep ice ages and today's warm interglacial period.",
+    earth: "Continents sat in roughly their modern positions; ice sheets rather than plate motion drove most environmental change.",
+  },
+  'Pridoli|Ludlow': {
+    desc: "Simple land plants continued spreading along damp shorelines, giving small arthropods more places to live and feed away from open water, while offshore, coral reefs recovering from the Silurian's earlier disruptions grew into some of the richest they had been. The reefs stayed the busier hub of life for now, but the plants and arthropods quietly establishing themselves on land were laying the groundwork for the much larger terrestrial ecosystems that would follow.",
+    flora: "Early leafless land plants and pioneering arthropods colonized damp shorelines, while coral reefs teemed with marine life offshore.",
+    atmo: "Oxygen continued its steady rise, thickening the ozone layer that shielded land from damaging UV radiation.",
+    temp: "Warm and stable, continuing the recovery from the end-Ordovician glaciation.",
+    earth: "Continents kept drifting together, narrowing the shallow seas between them and building new reef-friendly coastlines.",
+  },
+};
+
+// Matches each frame in a period to the epoch(s) it represents. Frames are
+// young -> old (buildFrames order); epochs are young -> old (CSV order).
+// Pass 1: natural age-containment, an epoch can span multiple frames.
+// Pass 2: any epoch with zero frames (no stage map falls in its narrow
+// range) merges into whichever frame is chronologically nearest, combining
+// into one "A & B" card rather than being silently dropped.
+function assignEpochsToFrames(periodFrames, epochs) {
+  const groups = periodFrames.map(() => []);
+  const used = new Set();
+
+  epochs.forEach((ep, epIdx) => {
+    periodFrames.forEach((f, fIdx) => {
+      if (f.ma == null) return;
+      const isOldest = epIdx === epochs.length - 1;
+      if (f.ma >= ep.start && (isOldest ? f.ma <= ep.end : f.ma < ep.end)) {
+        groups[fIdx].push(ep);
+        used.add(epIdx);
+      }
+    });
+  });
+
+  epochs.forEach((ep, epIdx) => {
+    if (used.has(epIdx)) return;
+    let bestIdx = -1, bestDist = Infinity;
+    periodFrames.forEach((f, fIdx) => {
+      if (f.ma == null) return;
+      const dist = f.ma < ep.start ? ep.start - f.ma : (f.ma > ep.end ? f.ma - ep.end : 0);
+      if (dist < bestDist) { bestDist = dist; bestIdx = fIdx; }
+    });
+    if (bestIdx >= 0) groups[bestIdx].push(ep);
+  });
+
+  return groups.map(group => {
+    if (!group.length) return null;
+    group.sort((a, b) => a.start - b.start);
+    if (group.length === 1) {
+      const e = group[0];
+      return { name: e.name, start: e.start, end: e.end, desc: e.desc, flora: e.flora,
+        atmo: e.atmo, temp: e.temp, earth: e.earth, creatureImg: e.creatureImg,
+        creatureImgCredit: e.creatureImgCredit, creatureImgDesc: e.creatureImgDesc };
+    }
+    const key = group.map(e => e.name).join('|');
+    const override = EPOCH_MERGE_OVERRIDES[key];
+    const name = group.map(e => e.name).join(' & ');
+    const start = Math.min(...group.map(e => e.start));
+    const end = Math.max(...group.map(e => e.end));
+    if (override) {
+      return { name, start, end, ...override, creatureImg: group.find(e => e.creatureImg)?.creatureImg || '',
+        creatureImgCredit: group.find(e => e.creatureImg)?.creatureImgCredit || '',
+        creatureImgDesc: group.find(e => e.creatureImg)?.creatureImgDesc || '' };
+    }
+    // Fallback for any future unmapped merge: join what we have rather than drop it.
+    const withImg = group.find(e => e.creatureImg);
+    return {
+      name, start, end,
+      desc: group.map(e => e.desc).filter(Boolean).join(' '),
+      flora: group.map(e => e.flora).filter(Boolean).join(' '),
+      atmo: group.map(e => e.atmo).filter(Boolean).join(' '),
+      temp: group.map(e => e.temp).filter(Boolean).join(' '),
+      earth: group.map(e => e.earth).filter(Boolean).join(' '),
+      creatureImg: withImg?.creatureImg || '',
+      creatureImgCredit: withImg?.creatureImgCredit || '',
+      creatureImgDesc: withImg?.creatureImgDesc || '',
+    };
+  });
+}
+
 // ── Build scrub frames ────────────────────────────────────────────
 // Each period gets one frame per stage map whose age falls in its range,
 // ordered young -> old. Periods with no map in range (older than 750 Ma)
@@ -540,6 +656,28 @@ function buildFrames(periods) {
     }
   }
   return frames;
+}
+
+// Attaches an `.epoch` display object to each frame (or null) by grouping
+// frames per period and running the age-matching assignment within each
+// group. Periods with no epoch rows (all Precambrian periods, and era-only
+// cards) simply get epoch: null on every frame, unchanged from before.
+function attachEpochsToFrames(frames, epochsByPeriod) {
+  let i = 0;
+  while (i < frames.length) {
+    const period = frames[i].period;
+    let span = 1;
+    while (i + span < frames.length && frames[i + span].period === period) span++;
+    const epochs = epochsByPeriod.get(period.name);
+    if (epochs && epochs.length) {
+      const periodFrames = frames.slice(i, i + span);
+      const assigned = assignEpochsToFrames(periodFrames, epochs);
+      for (let j = 0; j < span; j++) frames[i + j].epoch = assigned[j];
+    } else {
+      for (let j = 0; j < span; j++) frames[i + j].epoch = null;
+    }
+    i += span;
+  }
 }
 
 // ── State & DOM ───────────────────────────────────────────────────
@@ -564,6 +702,7 @@ const periodGroupsEl = document.getElementById('period-groups');
 const currentMaEl = document.getElementById('scrub-current-ma');
 const infoEraDot = document.getElementById('info-era-dot');
 const infoEraLabel = document.getElementById('info-era-label');
+const infoPeriodSub = document.getElementById('info-period-sub');
 const infoPeriod = document.getElementById('info-period');
 const infoDates = document.getElementById('info-dates');
 const infoContent = document.getElementById('info-content');
@@ -714,34 +853,44 @@ function renderFrame(idx) {
     mapLoading.classList.remove('visible');
   }
 
-  // Info panel (period-level content)
+  // Info panel — a frame with a matched epoch shows that epoch's own
+  // content (title, dates, desc, facts, image); otherwise falls back to the
+  // period/era-level content, unchanged (Precambrian periods with no epoch
+  // rows, and era-only cards).
+  const e = f.epoch;
+  const content = e || p;
+
   // Era-only entries (Neoarchean..Early Hadean) already use the era name as
   // their title, so the era pill above it would just repeat it — skip it.
   infoEraDot.parentElement.style.display = p.eraOnly ? 'none' : 'flex';
   infoEraDot.style.background = p.eraColor;
   infoEraLabel.textContent = p.eraLabel;
-  infoPeriod.textContent = p.name;
-  infoDates.textContent = `${p.start}–${p.end} million years ago`;
-  infoDesc.textContent = p.desc;
+  // When showing epoch-level content, the period name becomes a small
+  // breadcrumb above the (now epoch-named) title so context isn't lost.
+  infoPeriodSub.textContent = e ? p.name : '';
+  infoPeriodSub.style.display = e ? 'block' : 'none';
+  infoPeriod.textContent = content.name;
+  infoDates.textContent = `${content.start}–${content.end} million years ago`;
+  infoDesc.textContent = content.desc;
 
-  if (p.creatureImg) {
+  if (content.creatureImg) {
     infoCreature.style.display = 'block';
-    infoCreatureImg.src = p.creatureImg;
-    infoCreatureCaption.textContent = p.creatureImgDesc || '';
+    infoCreatureImg.src = content.creatureImg;
+    infoCreatureCaption.textContent = content.creatureImgDesc || '';
   } else {
     infoCreature.style.display = 'none';
     infoCreatureImg.removeAttribute('src');
   }
-  infoContent.classList.toggle('has-image', !!p.creatureImg);
+  infoContent.classList.toggle('has-image', !!content.creatureImg);
 
-  infoFactFlora.textContent = p.flora;
-  infoFactAtmo.textContent = p.atmo;
-  infoFactTemp.textContent = p.temp;
-  infoFactEarth.textContent = p.earth;
+  infoFactFlora.textContent = content.flora;
+  infoFactAtmo.textContent = content.atmo;
+  infoFactTemp.textContent = content.temp;
+  infoFactEarth.textContent = content.earth;
 
   // Illustration credit sits right under its image; map credit stands alone
-  infoCreditIllustration.textContent = p.creatureImgCredit ? `Illustration: ${p.creatureImgCredit}` : '';
-  infoCreditIllustration.style.display = p.creatureImgCredit ? 'block' : 'none';
+  infoCreditIllustration.textContent = content.creatureImgCredit ? `Illustration: ${content.creatureImgCredit}` : '';
+  infoCreditIllustration.style.display = content.creatureImgCredit ? 'block' : 'none';
   infoCreditMap.innerHTML = f.url ? `${MAP_CREDIT} &mdash; map dated ~${f.age}${f.stage ? ' (' + f.stage + ')' : ''}` : '';
   infoCreditMap.style.display = f.url ? 'block' : 'none';
 
@@ -913,8 +1062,10 @@ function toggleTheme() {
 async function init() {
   const res = await fetch(TIMELINE_DATA_URL);
   if (!res.ok) throw new Error('Failed to load ' + TIMELINE_DATA_URL + ' (' + res.status + ')');
-  periods = rowsToPeriods(parseCSV(await res.text()));
+  const rows = parseCSV(await res.text());
+  periods = rowsToPeriods(rows);
   frames = buildFrames(periods);
+  attachEpochsToFrames(frames, rowsToEpochs(rows));
   frameWidths = computeFrameWidths();
   buildEraGroups();
   buildPeriodGroups();
