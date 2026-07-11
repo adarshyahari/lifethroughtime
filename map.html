@@ -229,18 +229,10 @@
      let the info panel take the full stage width, laid out in 2 columns. */
   #stage.no-map #map-wrap { display: none; }
   #stage.no-map #info-panel { flex: 1 1 auto; width: 100%; }
-  #stage.no-map #info-content.has-image {
-    grid-template-columns: 1fr 350px;
-    grid-template-areas: "desc creature" "facts creature" "credits credits";
-  }
-  #stage.no-map #info-content:not(.has-image) {
-    grid-template-columns: 1fr;
-    grid-template-areas: "desc" "facts" "credits";
-  }
 
   /* ── Info panel ── */
   #info-panel {
-    position: relative; flex: 0 0 340px; width: 340px;
+    position: relative; flex: 0 0 340px; width: 340px; min-width: 0;
     background: var(--card-bg); border: 1.5px solid var(--border);
     box-shadow: 6px 6px 0 rgba(128,120,100,0.14);
     padding: 20px 22px; overflow-y: auto;
@@ -252,16 +244,22 @@
   #info-era-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   #info-period { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
   #info-dates { font-size: 12px; color: var(--ink2); margin-bottom: 14px; }
+  /* Three independent columns — desc, facts, images — so each sizes to its
+     own content instead of a shared-row grid forcing short columns to match
+     a taller neighbor (which used to leave a gap above facts). `order`
+     controls column position on desktop and full reflow on mobile. */
   #info-content {
-    display: grid; grid-template-columns: 1fr; row-gap: 14px; column-gap: 24px;
-    grid-template-areas: "desc" "creature" "facts" "credits";
+    display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 14px; min-width: 0;
   }
   #info-desc {
-    grid-area: desc; font-family: var(--body-serif); font-weight: 400; font-size: 15px; line-height: 1.6;
+    order: 1; flex: 1 1 220px; min-width: 0;
+    font-family: var(--body-serif); font-weight: 400; font-size: 15px; line-height: 1.6;
     color: var(--ink); opacity: 0.92;
   }
+  #info-desc p + p { margin-top: 0.85em; }
   #info-facts {
-    grid-area: facts; list-style: none; display: flex; flex-direction: column; gap: 9px;
+    order: 2; flex: 1 1 180px; min-width: 0;
+    list-style: none; display: flex; flex-direction: column; gap: 9px;
     font-size: 12.5px; line-height: 1.5; color: var(--ink2);
     border-top: 1px solid rgba(128,120,100,0.2); padding-top: 12px;
   }
@@ -269,13 +267,23 @@
     text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; display: block;
     margin-bottom: 2px; color: var(--ink3);
   }
-  #info-creature { grid-area: creature; display: none; }
+  #info-img-col {
+    order: 3; flex: 0 1 350px; min-width: 0; max-width: 100%;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  #info-creature { display: none; min-width: 0; }
   #info-creature img {
-    width: 100%; max-width: 350px; display: block; border: 1.5px solid var(--border);
+    width: 100%; max-width: 100%; display: block; border: 1.5px solid var(--border);
   }
   #info-creature-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
+  #info-creature2 { display: none; min-width: 0; }
+  #info-creature2 img {
+    width: 100%; max-width: 100%; display: block; border: 1.5px solid var(--border);
+  }
+  #info-creature2-caption { font-size: 10.5px; color: var(--ink3); margin-top: 6px; line-height: 1.4; }
   #info-credits {
-    grid-area: credits; font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.5;
+    order: 4; width: 100%;
+    font-size: 9.5px; color: var(--ink3); opacity: 0.8; line-height: 1.5;
     border-top: 1px solid rgba(128,120,100,0.2); padding-top: 10px;
     display: flex; flex-direction: column; gap: 4px;
   }
@@ -316,13 +324,13 @@
   .era-group {
     display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box;
     font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3);
-    border-bottom: 2px solid; border-right: 1px solid var(--bg); overflow: hidden; white-space: nowrap;
+    border-bottom: 2px solid; overflow: hidden; white-space: nowrap;
   }
   #period-groups { display: flex; height: 14px; margin-bottom: 4px; width: max-content; }
   .period-group {
     display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box;
     font-size: 8px; letter-spacing: 0.03em; color: var(--ink3);
-    border-bottom: 1.5px solid rgba(128,120,100,0.35); border-right: 1px solid var(--bg);
+    border-bottom: 1.5px solid rgba(128,120,100,0.35);
     overflow: hidden; white-space: nowrap; cursor: pointer; transition: color 0.15s, border-color 0.15s;
   }
   .period-group:hover, .period-group.current { color: var(--ink); border-color: var(--ink2); }
@@ -331,11 +339,11 @@
     cursor: pointer; touch-action: none;
   }
   .tick {
-    flex: 0 0 auto; box-sizing: border-box; border-right: 1px solid var(--bg);
+    flex: 0 0 auto; box-sizing: border-box;
     position: relative; display: flex; flex-direction: column;
     align-items: center; justify-content: flex-end;
   }
-  .tick-bar { width: 100%; height: 8px; border-radius: 2px; opacity: 0.35; transition: opacity 0.15s, height 0.15s; }
+  .tick-bar { width: calc(100% - 0.5px); height: 8px; border-radius: 2px; opacity: 0.35; transition: opacity 0.15s, height 0.15s; }
   .tick-bar.no-map { opacity: 0.18; }
   .tick.current .tick-bar { opacity: 1; height: 16px; }
   #scrub-current-ma {
@@ -369,10 +377,12 @@
     #info-panel { flex: 1 1 auto; width: 100%; max-height: none; }
     #info-period { font-size: 21px; }
     #info-desc { font-size: 15.5px; line-height: 1.65; }
-    #info-content.has-image {
-      grid-template-columns: 1fr !important;
-      grid-template-areas: "desc" "creature" "facts" "credits" !important;
-    }
+    /* Mobile stack order: overview, then images, then supplementary facts. */
+    #info-desc, #info-facts, #info-img-col { flex: 1 1 100%; }
+    #info-desc { order: 1; }
+    #info-img-col { order: 2; }
+    #info-facts { order: 3; }
+    #info-credits { order: 4; }
     /* Extra bottom padding clears the home-indicator / gesture-nav bar area
        on devices that report a safe-area inset (falls back to 16px otherwise). */
     #scrub-wrap { padding: 8px 10px calc(16px + env(safe-area-inset-bottom, 0px)); }
@@ -471,19 +481,26 @@
       <div id="info-period"></div>
       <div id="info-dates"></div>
       <div id="info-content">
-        <p id="info-desc"></p>
-        <div id="info-creature">
-          <img id="info-creature-img" alt="">
-          <div id="info-creature-caption"></div>
-        </div>
+        <div id="info-desc"></div>
         <ul id="info-facts">
           <li><span class="info-facts-label">Flora &amp; fauna</span><span id="info-fact-flora"></span></li>
           <li><span class="info-facts-label">Atmosphere</span><span id="info-fact-atmo"></span></li>
           <li><span class="info-facts-label">Temperature</span><span id="info-fact-temp"></span></li>
           <li><span class="info-facts-label">Earth structure</span><span id="info-fact-earth"></span></li>
         </ul>
+        <div id="info-img-col">
+        <div id="info-creature">
+          <img id="info-creature-img" alt="">
+          <div id="info-creature-caption"></div>
+        </div>
+        <div id="info-creature2">
+          <img id="info-creature2-img" alt="">
+          <div id="info-creature2-caption"></div>
+        </div>
+        </div>
         <div id="info-credits">
           <div id="info-credit-illustration"></div>
+          <div id="info-credit-illustration2"></div>
           <div id="info-credit-map"></div>
         </div>
       </div>
@@ -571,6 +588,39 @@ const STAGE_MAPS = {
 const MAP_CREDIT = 'Map: Scotese, Vérard, Burgener, Elling &amp; Kocsis — <a href="https://commons.wikimedia.org/wiki/Template:Other_versions/Mollweide_Paleographic_Map_of_Earth" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY 4.0';
 
 // ── CSV loading (same shape as index.html) ───────────────────────
+// Formats a single Ma value: values under 1000 stay in millions ("450 Ma"),
+// values at or above 1000 switch to billions ("1.2 Ba") for readability.
+function formatMa(ma) {
+  if (ma >= 1000) {
+    const ba = ma / 1000;
+    return `${Number(ba.toFixed(2))} Ba`;
+  }
+  return `${ma} Ma`;
+}
+
+// Formats a start–end range, switching to billions of years once either end
+// reaches 1000 Ma (e.g. Stenian 1000–1200 becomes "1–1.2 billion years ago").
+function formatMaRange(start, end, unitWord) {
+  if (start >= 1000 || end >= 1000) {
+    const startBa = Number((start / 1000).toFixed(2));
+    const endBa = Number((end / 1000).toFixed(2));
+    return `${startBa}–${endBa} ${unitWord ? 'billion years ago' : 'Ba'}`;
+  }
+  return `${start}–${end} ${unitWord ? 'million years ago' : 'Ma'}`;
+}
+
+// Renders text as one <p> per blank-line-separated paragraph, so long
+// era/period/epoch descriptions can be authored as short paragraphs in the
+// CSV instead of one dense block.
+function setParagraphs(el, text) {
+  el.innerHTML = '';
+  (text || '').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean).forEach(para => {
+    const p = document.createElement('p');
+    p.textContent = para;
+    el.appendChild(p);
+  });
+}
+
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -642,6 +692,7 @@ function rowsToPeriods(rows) {
       end: Number(row.era_end),
       desc: (row.era_desc || '').trim(),
       eraLabel: (row.era_label || '').trim(),
+      eraEon: (row.era_eon || '').trim(),
       eraColor: (row.era_color || '#8a8270').trim(),
       flora: (row.era_flora || '').trim(),
       atmo: (row.era_atmo || '').trim(),
@@ -650,6 +701,9 @@ function rowsToPeriods(rows) {
       creatureImg: (row.era_img || '').trim(),
       creatureImgCredit: (row.era_imgCredit || '').trim(),
       creatureImgDesc: (row.era_imgDesc || '').trim(),
+      creatureImg2: (row.era_img2 || '').trim(),
+      creatureImg2Credit: (row.era_img2Credit || '').trim(),
+      creatureImg2Desc: (row.era_img2Desc || '').trim(),
       eraOnly: true,
     });
   }
@@ -844,11 +898,15 @@ const infoDesc = document.getElementById('info-desc');
 const infoCreature = document.getElementById('info-creature');
 const infoCreatureImg = document.getElementById('info-creature-img');
 const infoCreatureCaption = document.getElementById('info-creature-caption');
+const infoCreature2 = document.getElementById('info-creature2');
+const infoCreature2Img = document.getElementById('info-creature2-img');
+const infoCreature2Caption = document.getElementById('info-creature2-caption');
 const infoFactFlora = document.getElementById('info-fact-flora');
 const infoFactAtmo = document.getElementById('info-fact-atmo');
 const infoFactTemp = document.getElementById('info-fact-temp');
 const infoFactEarth = document.getElementById('info-fact-earth');
 const infoCreditIllustration = document.getElementById('info-credit-illustration');
+const infoCreditIllustration2 = document.getElementById('info-credit-illustration2');
 const infoCreditMap = document.getElementById('info-credit-map');
 
 // Measure text precisely (accounting for letter-spacing, which canvas
@@ -994,16 +1052,16 @@ function renderFrame(idx) {
   const e = f.epoch;
   const content = e || p;
 
-  // Era-only entries (Neoarchean..Early Hadean) already use the era name as
+  // Era-only entries (Neoarchean..Hadean) already use the era/eon name as
   // their title, so the breadcrumb above it would just repeat it — skip it.
   infoEraDot.parentElement.style.display = p.eraOnly ? 'none' : 'flex';
   infoEraDot.style.background = p.eraColor;
   infoEraLabel.textContent = e ? `${p.eraLabel} Era · ${p.name} Period` : `${p.eraLabel} Era`;
   // Title always carries its geologic rank (Epoch/Period/Era).
-  const rank = e ? 'Epoch' : (p.eraOnly ? 'Era' : 'Period');
+  const rank = e ? 'Epoch' : (p.eraOnly ? (p.eraLabel === p.eraEon ? 'Eon' : 'Era') : 'Period');
   infoPeriod.textContent = `${content.name} ${rank}`;
-  infoDates.textContent = `${content.start}–${content.end} million years ago`;
-  infoDesc.textContent = content.desc;
+  infoDates.textContent = formatMaRange(content.start, content.end, true);
+  setParagraphs(infoDesc, content.desc);
 
   if (content.creatureImg) {
     infoCreature.style.display = 'block';
@@ -1012,6 +1070,14 @@ function renderFrame(idx) {
   } else {
     infoCreature.style.display = 'none';
     infoCreatureImg.removeAttribute('src');
+  }
+  if (content.creatureImg2) {
+    infoCreature2.style.display = 'block';
+    infoCreature2Img.src = content.creatureImg2;
+    infoCreature2Caption.textContent = content.creatureImg2Desc || '';
+  } else {
+    infoCreature2.style.display = 'none';
+    infoCreature2Img.removeAttribute('src');
   }
   infoContent.classList.toggle('has-image', !!content.creatureImg);
 
@@ -1023,6 +1089,8 @@ function renderFrame(idx) {
   // Illustration credit sits right under its image; map credit stands alone
   infoCreditIllustration.textContent = content.creatureImgCredit ? `Illustration: ${content.creatureImgCredit}` : '';
   infoCreditIllustration.style.display = content.creatureImgCredit ? 'block' : 'none';
+  infoCreditIllustration2.textContent = content.creatureImg2Credit ? `Illustration: ${content.creatureImg2Credit}` : '';
+  infoCreditIllustration2.style.display = content.creatureImg2Credit ? 'block' : 'none';
   infoCreditMap.innerHTML = f.url ? `${MAP_CREDIT} &mdash; map dated ~${f.age}${f.stage ? ' (' + f.stage + ')' : ''}` : '';
   infoCreditMap.style.display = f.url ? 'block' : 'none';
 
@@ -1051,7 +1119,7 @@ function positionPlayhead() {
   const center = tickRect.left - trackRect.left + tickRect.width / 2;
   currentMaEl.style.left = center + 'px';
   const f = frames[currentIndex];
-  currentMaEl.textContent = f.url ? `~${f.age}` : `${f.period.start}–${f.period.end} Ma`;
+  currentMaEl.textContent = f.url ? `~${f.age}` : formatMaRange(f.period.start, f.period.end, false);
 }
 
 // ── Scrub interaction ─────────────────────────────────────────────

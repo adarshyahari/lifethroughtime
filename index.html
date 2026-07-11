@@ -1422,6 +1422,32 @@ function updateNavigation() {
 let eras = [];
 const TIMELINE_DATA_URL = 'data/timeline-data.csv';
 
+// Formats a single mya value: under 1000 stays in millions ("450 mya"),
+// at or above 1000 switches to billions ("1.2 bya") for readability.
+function formatMya(mya) {
+  if (mya >= 1000) {
+    const bya = Math.round((mya / 1000) * 100) / 100;
+    const formatted = bya % 1 === 0 ? String(bya) : bya.toFixed(2).replace(/0$/, '');
+    return `${formatted} bya`;
+  }
+  const rounded = Math.round(mya * 10) / 10;
+  const formatted = rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1);
+  return `${formatted} mya`;
+}
+
+// Formats a start–end range, switching to billions once either end reaches
+// 1000 mya (e.g. Stenian 1000–1200 becomes "1–1.2 bya").
+function formatMyaRange(start, end) {
+  if (start >= 1000 || end >= 1000) {
+    const fmt = v => {
+      const bya = Math.round((v / 1000) * 100) / 100;
+      return bya % 1 === 0 ? String(bya) : bya.toFixed(2).replace(/0$/, '');
+    };
+    return `${fmt(start)}–${fmt(end)} bya`;
+  }
+  return `${start}–${end} mya`;
+}
+
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -1671,8 +1697,7 @@ function spawnSlotBoundaryMarkers(boundaries, registry, opts = {}) {
 
     const tl = document.createElement('div');
     tl.className = labelClass;
-    const formatted = rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1);
-    tl.textContent = formatted + ' mya';
+    tl.textContent = formatMya(rounded);
     if (isPeriodStyle) {
       tl.style.cssText = `left:${x}px; top:${lineY + 14}px; transform:translateX(-50%); font-weight:500; color:var(--ink2);`;
     } else {
@@ -1710,8 +1735,7 @@ function spawnBoundaryMarkers(xFn, myaList, registry, opts = {}) {
 
     const tl = document.createElement('div');
     tl.className = 'tick-label';
-    const formatted = mya % 1 === 0 ? String(mya) : mya.toFixed(1);
-    tl.textContent = formatted + ' mya';
+    tl.textContent = formatMya(mya);
     tl.style.cssText = `left:${x}px; top:${lineY+12}px;`;
     tagLayoutEl(tl, key, 'label');
     canvas.appendChild(tl);
@@ -1762,7 +1786,7 @@ function buildTimelineBase(xFn, totalW, opts = {}) {
     const elab = document.createElement('div');
     elab.className = 'now-label';
     elab.style.cssText = `left:${xFn(TOTAL_MYA)+5}px; top:${lineY-20}px;`;
-    elab.textContent = '~4570 mya';
+    elab.textContent = '~' + formatMya(4570);
     tagLayoutEl(elab, 'origin', 'label');
     base(elab);
   }
@@ -2005,7 +2029,7 @@ function spawnTimelineCardItem(item, xFn, idx, registry, opts = {}) {
       <div class="epoch-card-period">${item.era.label} · ${item.period.name}</div>
       <div class="epoch-card-name" style="background:${item.era.colorLight}">${item.epoch.name}</div>
       <div class="epoch-card-desc">${item.epoch.desc}</div>
-      <div class="epoch-card-dates" style="color:${darkenHex(color, 0.45)}">${item.epoch.start}–${item.epoch.end} mya</div>
+      <div class="epoch-card-dates" style="color:${darkenHex(color, 0.45)}">${formatMyaRange(item.epoch.start, item.epoch.end)}</div>
     `;
     canvas.appendChild(ecard);
     registry.push(ecard);
@@ -2049,7 +2073,7 @@ function spawnTimelineCardItem(item, xFn, idx, registry, opts = {}) {
       <div class="period-card-era">${item.era.label} Era</div>
       <div class="period-card-name" style="background:${item.era.colorLight}">${item.period.name} Period</div>
       <div class="period-card-desc">${item.period.desc}</div>
-      <div class="period-card-dates" style="color:${darkenHex(color, 0.45)}">${item.period.start}–${item.period.end} mya</div>
+      <div class="period-card-dates" style="color:${darkenHex(color, 0.45)}">${formatMyaRange(item.period.start, item.period.end)}</div>
     `;
 
     if (allowPeriodZoom && hasEpochs) {
@@ -2117,10 +2141,10 @@ function spawnTimelineCardItem(item, xFn, idx, registry, opts = {}) {
   ecard.style.cssText = `left:${midX - CARD_W()/2}px; top:${cardTop}px; cursor:default; ${fadeStyle}`;
   tagLayoutEl(ecard, lkey, 'card');
   ecard.innerHTML = `
-    ${era.eon ? `<div class="era-card-eon">${era.eon} Eon</div>` : ''}
-    <div class="era-card-name" style="background:${era.colorLight || DEFAULT_GREY_LIGHT}">${era.label} Era</div>
+    ${era.eon && era.eon !== era.label ? `<div class="era-card-eon">${era.eon} Eon</div>` : ''}
+    <div class="era-card-name" style="background:${era.colorLight || DEFAULT_GREY_LIGHT}">${era.label} ${era.eon === era.label ? 'Eon' : 'Era'}</div>
     <div class="era-card-desc">${era.desc}</div>
-    <div class="era-card-dates" style="color:${darkenHex(color, 0.45)}">${era.start}–${era.end} mya</div>
+    <div class="era-card-dates" style="color:${darkenHex(color, 0.45)}">${formatMyaRange(era.start, era.end)}</div>
   `;
   canvas.appendChild(ecard);
   registry.push(ecard);
@@ -2252,10 +2276,10 @@ function buildEraEls(era, idx, evenLayout) {
   card.style.cssText = `left:${cardLeft}px; top:${above ? lineY - STEM_H - CARD_H - 30 : lineY + STEM_H}px;`;
   tagLayoutEl(card, lkey, 'card');
   card.innerHTML = `
-    ${era.eon ? `<div class="era-card-eon">${era.eon} Eon</div>` : ''}
-    <div class="era-card-name" style="background:${era.colorLight || DEFAULT_GREY_LIGHT}">${era.label} Era</div>
+    ${era.eon && era.eon !== era.label ? `<div class="era-card-eon">${era.eon} Eon</div>` : ''}
+    <div class="era-card-name" style="background:${era.colorLight || DEFAULT_GREY_LIGHT}">${era.label} ${era.eon === era.label ? 'Eon' : 'Era'}</div>
     <div class="era-card-desc">${era.desc}</div>
-    <div class="era-card-dates" style="color:${darkenHex(era.color || DEFAULT_GREY, 0.45)}">${era.start}–${era.end} mya</div>
+    <div class="era-card-dates" style="color:${darkenHex(era.color || DEFAULT_GREY, 0.45)}">${formatMyaRange(era.start, era.end)}</div>
   `;
   if (hasPeriods) {
     card.addEventListener('click', e => { hideEraCardTooltip(); zoomEra(era, e.clientX, e.clientY); });
@@ -2610,7 +2634,7 @@ function spawnEraEpochMarkers(era, xFn, evenLayout, timelineCards, registry) {
       const tl = document.createElement('div');
       tl.className = 'epoch-tick-label';
       tl.style.cssText = `left:${x}px; top:${lineY+12}px;`;
-      tl.textContent = mya + ' mya';
+      tl.textContent = formatMya(mya);
       canvas.appendChild(tl);
       registry.push(tl);
       requestAnimationFrame(() => { tick.classList.add('visible'); tl.classList.add('visible'); });
@@ -2900,8 +2924,7 @@ function spawnEraBoundaryLabels(era, xFn, registry) {
 
     const label = document.createElement('div');
     label.className = 'period-tick-label';
-    const formatted = mya % 1 === 0 ? mya : mya.toFixed(1);
-    label.textContent = formatted + ' mya';
+    label.textContent = formatMya(mya);
     label.style.cssText = `left:${x}px; top:${lineY+14}px; transform:translateX(-50%); font-weight:500; color:var(--ink2);`;
     canvas.appendChild(label); registry.push(label);
     requestAnimationFrame(() => { tick.classList.add('visible'); label.classList.add('visible'); });
@@ -2936,7 +2959,7 @@ function spawnPeriods(era, xFn, evenLayout, opts = {}) {
         const tl = document.createElement('div');
         tl.className = 'period-tick-label';
         tl.style.cssText = `left:${x}px; top:${lineY+12}px;`;
-        tl.textContent = mya + ' mya';
+        tl.textContent = formatMya(mya);
         canvas.appendChild(tl); periodEls.push(tl);
         requestAnimationFrame(() => { tick.classList.add('visible'); tl.classList.add('visible'); });
       });

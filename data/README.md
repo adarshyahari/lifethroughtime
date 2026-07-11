@@ -24,9 +24,12 @@ Each row is one **epoch**. Periods without epochs get one row with empty epoch c
 | `era_color`, `era_colorLight` | Era | Hex colors |
 | `era_above` | Era | `true` / `false` / blank (auto-alternate card position) |
 | `era_img`, `era_imgCredit`, `era_imgDesc` | Era | Optional hover image |
+| `era_img2`, `era_img2Credit`, `era_img2Desc` | Era | Optional second image, shown only in the map view (`map.html`), below the first |
 | `period_*` | Period | Same pattern |
 | `epoch_*` | Epoch | Same pattern |
 
 Era and period fields repeat on every row so the sheet is easy to filter and edit in Google Sheets or Excel.
 
 Dates are in **millions of years ago** (0 = present). Leave optional fields blank; do not delete columns.
+
+In `era_desc` (and other `*_desc` fields shown in the map view's info panel), separate sentences into short paragraphs with a blank line — `map.html` renders each as its own `<p>`.
